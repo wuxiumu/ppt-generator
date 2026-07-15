@@ -262,6 +262,94 @@ function copySlideAsMarkdown(index) {
   });
 }
 
+function copyAllSlidesAsMarkdown() {
+  const slides = currentProject.slides || [];
+  if (slides.length === 0) {
+    toast('没有幻灯片可复制');
+    return;
+  }
+
+  let allMd = '';
+  const projectTitle = currentProject.topic || '演示文稿';
+
+  // Add project title
+  allMd += `# ${projectTitle}\n\n`;
+
+  // Convert each slide
+  slides.forEach((slide, index) => {
+    let md = '';
+
+    // Title
+    md += `## ${slide.title || '无标题'}\n\n`;
+
+    // Subtitle
+    if (slide.subtitle) {
+      md += `**${slide.subtitle}**\n\n`;
+    }
+
+    // Body text
+    if (slide.body_text) {
+      md += `${slide.body_text}\n\n`;
+    }
+
+    // Bullets
+    if (slide.bullets && slide.bullets.length > 0) {
+      md += slide.bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+    }
+
+    // Highlight (big_number)
+    if (slide.highlight) {
+      md += `> **${slide.highlight}**\n\n`;
+    }
+
+    // Code
+    if (slide.code) {
+      md += '```python\n' + slide.code + '\n```\n\n';
+    }
+
+    // Annotations
+    if (slide.annotations && slide.annotations.length > 0) {
+      md += '**注释：**\n';
+      md += slide.annotations.map(a => `- ${a}`).join('\n') + '\n\n';
+    }
+
+    // Comparison
+    if (slide.left_title || slide.right_title) {
+      if (slide.left_title) {
+        md += `### ${slide.left_title}\n`;
+        if (slide.left_bullets && slide.left_bullets.length > 0) {
+          md += slide.left_bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+        }
+      }
+      if (slide.right_title) {
+        md += `### ${slide.right_title}\n`;
+        if (slide.right_bullets && slide.right_bullets.length > 0) {
+          md += slide.right_bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+        }
+      }
+    }
+
+    // Speaker notes
+    if (slide.speaker_notes) {
+      md += `*演讲备注：${slide.speaker_notes}*\n`;
+    }
+
+    // Add slide separator (except for the last slide)
+    if (index < slides.length - 1) {
+      md += '\n---\n\n';
+    }
+
+    allMd += md;
+  });
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(allMd).then(() => {
+    toast(`已复制全部 ${slides.length} 张幻灯片`);
+  }).catch(err => {
+    toast('复制失败：' + err.message);
+  });
+}
+
 function selectSlide(index) {
   selectedSlideIndex = index;
   renderSlides();
