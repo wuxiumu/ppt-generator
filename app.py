@@ -125,6 +125,21 @@ def save_project(pid: str, data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def create_history_snapshot(pid: str, project: dict, note: str = ""):
+    """Create a history snapshot of current slides."""
+    if "history" not in project:
+        project["history"] = []
+
+    version = len(project["history"]) + 1
+    snapshot = {
+        "version": version,
+        "timestamp": datetime.now().isoformat(),
+        "slides": project.get("slides", []),
+        "note": note
+    }
+    project["history"].append(snapshot)
+
+
 def list_projects() -> list[dict]:
     results = []
     for d in sorted(PROJECTS_DIR.iterdir()):
@@ -165,6 +180,23 @@ def serve_css(filename):
 @app.route("/js/<path:filename>")
 def serve_js(filename):
     return send_from_directory("admin-html/js", filename)
+
+
+@app.route("/api/temp/<temp_dir>/<path:filename>")
+def serve_temp_file(temp_dir, filename):
+    """Serve temporary preview files."""
+    import tempfile
+    temp_base = Path(tempfile.gettempdir())
+    temp_path = temp_base / temp_dir / filename
+
+    # Security check: ensure path is within temp directory
+    if not str(temp_path.resolve()).startswith(str(temp_base.resolve())):
+        return jsonify({"error": "invalid path"}), 403
+
+    if not temp_path.exists():
+        return jsonify({"error": "not found"}), 404
+
+    return send_from_directory(str(temp_path.parent), temp_path.name)
 
 
 @app.route("/share/<pid>/<filename>")
@@ -265,11 +297,49 @@ def api_update_slides(pid):
         return jsonify({"error": "not found"}), 404
     slides = request.json
     if isinstance(slides, list):
+        # Create history snapshot before updating
+        create_history_snapshot(pid, project, "编辑幻灯片")
+
         project["slides"] = slides
         project["updated_at"] = datetime.now().isoformat()
         save_project(pid, project)
         return jsonify({"ok": True, "count": len(slides)})
     return jsonify({"error": "expected array"}), 400
+
+
+@app.route("/api/projects/<pid>/history", methods=["GET"])
+def api_get_history(pid):
+    """Get version history for a project."""
+    project = load_project(pid)
+    if not project:
+        return jsonify({"error": "not found"}), 404
+
+    history = project.get("history", [])
+    return jsonify(history)
+
+
+@app.route("/api/projects/<pid>/rollback/<int:version>", methods=["POST"])
+def api_rollback(pid, version):
+    """Rollback to a specific version."""
+    project = load_project(pid)
+    if not project:
+        return jsonify({"error": "not found"}), 404
+
+    history = project.get("history", [])
+    target = next((h for h in history if h["version"] == version), None)
+
+    if not target:
+        return jsonify({"error": "version not found"}), 404
+
+    # Create snapshot of current state before rollback
+    create_history_snapshot(pid, project, f"回滚到版本 {version}")
+
+    # Restore slides from target version
+    project["slides"] = target["slides"]
+    project["updated_at"] = datetime.now().isoformat()
+    save_project(pid, project)
+
+    return jsonify({"ok": True, "restored_version": version})
 
 
 @app.route("/api/projects/<pid>/generate", methods=["POST"])
@@ -295,6 +365,63 @@ def api_generate(pid):
 def api_status(pid):
     status = gen_status.get(pid, {"status": "idle", "progress": "", "outputs": []})
     return jsonify(status)
+
+
+@app.route("/api/projects/<pid>/preview", methods=["POST"])
+def api_preview(pid):
+    """Generate a preview HTML/PPTX from current slides data."""
+    project = load_project(pid)
+    if not project:
+        return jsonify({"error": "not found"}), 404
+
+    slides = project.get("slides", [])
+    if not slides:
+        return jsonify({"error": "no slides"}), 400
+
+    # Get format from request
+    params = request.json or {}
+    fmt = params.get("format", "html")  # html, pptx, or both
+
+    # Create temp directory for preview
+    import tempfile
+    import shutil
+    temp_dir = Path(tempfile.mkdtemp(prefix=f"preview_{pid}_"))
+
+    outputs = []
+
+    try:
+        # Generate HTML preview
+        if fmt in ("html", "both"):
+            from html_renderer import HTMLRenderer
+            html_renderer = HTMLRenderer()
+            palette = project.get("plan", {}).get("palette", "tech")
+            html_file = temp_dir / "preview.html"
+            html_renderer.render(slides, palette, project.get("topic", "Preview"), html_file)
+            outputs.append({
+                "type": "html",
+                "name": "preview.html",
+                "url": f"/api/temp/{temp_dir.name}/preview.html"
+            })
+
+        # Generate PPTX preview
+        if fmt in ("pptx", "both"):
+            from renderer import Renderer
+            pptx_renderer = Renderer()
+            palette = project.get("plan", {}).get("palette", "tech")
+            pptx_file = temp_dir / "preview.pptx"
+            pptx_renderer.render(slides, palette, project.get("topic", "Preview"), pptx_file)
+            outputs.append({
+                "type": "pptx",
+                "name": "preview.pptx",
+                "url": f"/api/temp/{temp_dir.name}/preview.pptx"
+            })
+
+        return jsonify({"ok": True, "outputs": outputs})
+
+    except Exception as e:
+        # Clean up on error
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/projects/<pid>/output/<filename>")

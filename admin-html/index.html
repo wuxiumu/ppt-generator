@@ -104,7 +104,9 @@
       <div class="slides-toolbar" id="slidesToolbar" style="display:none">
         <button class="btn btn-sm btn-secondary" onclick="moveSlide(-1)">⬆ 上移</button>
         <button class="btn btn-sm btn-secondary" onclick="moveSlide(1)">⬇ 下移</button>
-        <span class="slides-hint">点击幻灯片卡片选择，然后使用上移/下移按钮调整顺序</span>
+        <button class="btn btn-sm btn-secondary" onclick="showHistory()">📜 历史版本</button>
+        <button class="btn btn-sm btn-primary" onclick="previewSlides()">👁 预览</button>
+        <span class="slides-hint">点击卡片编辑幻灯片内容</span>
       </div>
       <div id="slidesList"></div>
       <div id="slidesEmpty" class="empty" style="display:none">
@@ -125,9 +127,9 @@
           <div class="field">
             <label>输出格式</label>
             <select id="f-format">
-              <option value="both">HTML + PPTX</option>
               <option value="html">仅 HTML</option>
               <option value="pptx">仅 PPTX</option>
+              <option value="both">HTML + PPTX</option>
             </select>
           </div>
           <button class="btn btn-primary" id="btnGenerate" onclick="generate()">🚀 开始生成</button>
@@ -156,6 +158,26 @@
   </div>
 </div>
 
+<!-- Slide Editor Modal -->
+<div class="modal-overlay" id="slideEditorModal">
+  <div class="modal modal-slide-editor">
+    <div class="slide-editor-header">
+      <h3>编辑幻灯片 <span id="editorSlideNum"></span></h3>
+      <div class="slide-editor-meta">
+        <span class="slide-layout-badge" id="editorLayout"></span>
+        <span class="slide-act-badge" id="editorAct"></span>
+      </div>
+    </div>
+    <div class="slide-editor-body" id="editorBody">
+      <!-- Dynamic fields will be inserted here -->
+    </div>
+    <div class="slide-editor-footer">
+      <button class="btn btn-secondary" onclick="closeSlideEditor()">取消</button>
+      <button class="btn btn-primary" onclick="saveSlideEdit()">保存修改</button>
+    </div>
+  </div>
+</div>
+
 <!-- All Projects Modal -->
 <div class="modal-overlay" id="allProjectsModal">
   <div class="modal modal-large">
@@ -168,6 +190,16 @@
 
 <!-- Toast -->
 <div class="save-toast" id="toast">已保存</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal modal-large">
+    <h3>📜 历史版本</h3>
+    <p class="modal-sub">共 <span id="historyCount">0</span> 个版本</p>
+    <div class="history-list" id="historyList"></div>
+    <button class="modal-close" onclick="closeHistory()">关闭</button>
+  </div>
+</div>
 
 <!-- Share Modal -->
 <div class="modal-overlay" id="shareModal">

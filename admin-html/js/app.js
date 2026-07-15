@@ -3,6 +3,8 @@ let currentProject = null;
 let currentId = null;
 let selectedSlideIndex = null;
 let allProjects = [];
+let editingSlideIndex = null;
+let editingSlideData = null;
 
 // ── API helpers ──────────────────────────────────
 async function api(url, method = 'GET', body = null) {
@@ -136,15 +138,15 @@ function renderSlides() {
   empty.style.display = 'none';
   toolbar.style.display = '';
   container.innerHTML = slides.map((s, i) => `
-    <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="selectSlide(${i})">
+    <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="openSlideEditor(${i})">
       <div class="slide-num">${s.slide_num || i + 1}</div>
       <div class="slide-body">
         <div class="slide-meta">
           <span>${esc(s.layout || 'bullets')}</span>
           <span>Act ${s.act || '?'}</span>
         </div>
-        <h4><input value="${esc(s.title || '')}" onchange="updateSlide(${i}, 'title', this.value)" onclick="event.stopPropagation()" style="border:none;padding:0;font-size:14px;font-weight:600;width:100%"></h4>
-        <textarea onchange="updateSlide(${i}, 'body_text', this.value)" onclick="event.stopPropagation()" placeholder="正文/要点...">${esc(s.body_text || '')}</textarea>
+        <h4>${esc(s.title || '无标题')}</h4>
+        <p style="font-size:13px;color:var(--text2);margin:4px 0">${esc(s.body_text || '').substring(0, 80)}</p>
         ${(s.bullets || []).length ? `<div style="margin-top:6px;font-size:12px;color:var(--text3)">要点: ${s.bullets.map(b => esc(b)).join(' / ')}</div>` : ''}
       </div>
     </div>
@@ -344,6 +346,397 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ── Helpers ──────────────────────────────────────
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ── Slide Editor ─────────────────────────────────
+function getFieldsForLayout(layout) {
+  const common = ['title', 'subtitle', 'body_text', 'speaker_notes'];
+  const layoutFields = {
+    title: ['subtitle'],
+    section: [],
+    bullets: ['bullets'],
+    statement: [],
+    comparison: ['left_title', 'left_bullets', 'right_title', 'right_bullets'],
+    big_number: ['highlight'],
+    code: ['code', 'annotations'],
+    end: []
+  };
+  return [...new Set([...common, ...(layoutFields[layout] || [])])];
+}
+
+function openSlideEditor(index) {
+  editingSlideIndex = index;
+  editingSlideData = JSON.parse(JSON.stringify(currentProject.slides[index])); // Deep copy
+
+  const modal = document.getElementById('slideEditorModal');
+  const slideNum = document.getElementById('editorSlideNum');
+  const layout = document.getElementById('editorLayout');
+  const act = document.getElementById('editorAct');
+  const body = document.getElementById('editorBody');
+
+  slideNum.textContent = editingSlideData.slide_num || (index + 1);
+  layout.textContent = editingSlideData.layout || 'bullets';
+  act.textContent = `Act ${editingSlideData.act || '?'}`;
+
+  renderEditorFields();
+  modal.classList.add('show');
+}
+
+function renderEditorFields() {
+  const body = document.getElementById('editorBody');
+  const layout = editingSlideData.layout || 'bullets';
+  const fields = getFieldsForLayout(layout);
+
+  let html = '';
+
+  // Title
+  if (fields.includes('title')) {
+    html += `
+      <div class="editor-field">
+        <label>标题</label>
+        <input type="text" id="edit-title" value="${esc(editingSlideData.title || '')}" placeholder="幻灯片标题">
+      </div>
+    `;
+  }
+
+  // Subtitle
+  if (fields.includes('subtitle')) {
+    html += `
+      <div class="editor-field">
+        <label>副标题</label>
+        <input type="text" id="edit-subtitle" value="${esc(editingSlideData.subtitle || '')}" placeholder="副标题（可选）">
+      </div>
+    `;
+  }
+
+  // Body text
+  if (fields.includes('body_text')) {
+    html += `
+      <div class="editor-field">
+        <label>正文</label>
+        <textarea id="edit-body_text" rows="3" placeholder="正文内容">${esc(editingSlideData.body_text || '')}</textarea>
+      </div>
+    `;
+  }
+
+  // Bullets
+  if (fields.includes('bullets')) {
+    const bullets = editingSlideData.bullets || [];
+    html += `
+      <div class="editor-field">
+        <label>要点列表</label>
+        <div class="bullets-editor" id="edit-bullets">
+          ${bullets.map((b, i) => `
+            <div class="bullet-item">
+              <input type="text" value="${esc(b)}" onchange="updateBullet(${i}, this.value)" placeholder="要点 ${i + 1}">
+              <button class="btn-icon" onclick="removeBullet(${i})" title="删除">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-sm btn-secondary" onclick="addBullet()">+ 添加要点</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Highlight (big_number)
+  if (fields.includes('highlight')) {
+    html += `
+      <div class="editor-field">
+        <label>大数字</label>
+        <input type="text" id="edit-highlight" value="${esc(editingSlideData.highlight || '')}" placeholder="例: 300万+">
+      </div>
+    `;
+  }
+
+  // Code
+  if (fields.includes('code')) {
+    html += `
+      <div class="editor-field">
+        <label>代码</label>
+        <textarea id="edit-code" rows="8" class="code-editor" placeholder="代码内容">${esc(editingSlideData.code || '')}</textarea>
+      </div>
+    `;
+  }
+
+  // Annotations
+  if (fields.includes('annotations')) {
+    const annotations = editingSlideData.annotations || [];
+    html += `
+      <div class="editor-field">
+        <label>注释</label>
+        <div class="annotations-editor" id="edit-annotations">
+          ${annotations.map((a, i) => `
+            <div class="annotation-item">
+              <input type="text" value="${esc(a)}" onchange="updateAnnotation(${i}, this.value)" placeholder="注释 ${i + 1}">
+              <button class="btn-icon" onclick="removeAnnotation(${i})" title="删除">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-sm btn-secondary" onclick="addAnnotation()">+ 添加注释</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Comparison - Left
+  if (fields.includes('left_title')) {
+    html += `
+      <div class="editor-field comparison-field">
+        <label>左栏标题</label>
+        <input type="text" id="edit-left_title" value="${esc(editingSlideData.left_title || '')}" placeholder="左栏标题">
+      </div>
+    `;
+  }
+
+  if (fields.includes('left_bullets')) {
+    const leftBullets = editingSlideData.left_bullets || [];
+    html += `
+      <div class="editor-field comparison-field">
+        <label>左栏要点</label>
+        <div class="bullets-editor">
+          ${leftBullets.map((b, i) => `
+            <div class="bullet-item">
+              <input type="text" value="${esc(b)}" onchange="updateLeftBullet(${i}, this.value)" placeholder="左栏要点 ${i + 1}">
+              <button class="btn-icon" onclick="removeLeftBullet(${i})" title="删除">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-sm btn-secondary" onclick="addLeftBullet()">+ 添加</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Comparison - Right
+  if (fields.includes('right_title')) {
+    html += `
+      <div class="editor-field comparison-field">
+        <label>右栏标题</label>
+        <input type="text" id="edit-right_title" value="${esc(editingSlideData.right_title || '')}" placeholder="右栏标题">
+      </div>
+    `;
+  }
+
+  if (fields.includes('right_bullets')) {
+    const rightBullets = editingSlideData.right_bullets || [];
+    html += `
+      <div class="editor-field comparison-field">
+        <label>右栏要点</label>
+        <div class="bullets-editor">
+          ${rightBullets.map((b, i) => `
+            <div class="bullet-item">
+              <input type="text" value="${esc(b)}" onchange="updateRightBullet(${i}, this.value)" placeholder="右栏要点 ${i + 1}">
+              <button class="btn-icon" onclick="removeRightBullet(${i})" title="删除">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-sm btn-secondary" onclick="addRightBullet()">+ 添加</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Speaker notes
+  if (fields.includes('speaker_notes')) {
+    html += `
+      <div class="editor-field">
+        <label>演讲备注</label>
+        <textarea id="edit-speaker_notes" rows="3" placeholder="演讲备注（可选）">${esc(editingSlideData.speaker_notes || '')}</textarea>
+      </div>
+    `;
+  }
+
+  body.innerHTML = html;
+}
+
+// Bullet management
+function addBullet() {
+  editingSlideData.bullets = editingSlideData.bullets || [];
+  editingSlideData.bullets.push('');
+  renderEditorFields();
+}
+
+function removeBullet(index) {
+  editingSlideData.bullets.splice(index, 1);
+  renderEditorFields();
+}
+
+function updateBullet(index, value) {
+  editingSlideData.bullets[index] = value;
+}
+
+// Annotation management
+function addAnnotation() {
+  editingSlideData.annotations = editingSlideData.annotations || [];
+  editingSlideData.annotations.push('');
+  renderEditorFields();
+}
+
+function removeAnnotation(index) {
+  editingSlideData.annotations.splice(index, 1);
+  renderEditorFields();
+}
+
+function updateAnnotation(index, value) {
+  editingSlideData.annotations[index] = value;
+}
+
+// Left bullets (comparison)
+function addLeftBullet() {
+  editingSlideData.left_bullets = editingSlideData.left_bullets || [];
+  editingSlideData.left_bullets.push('');
+  renderEditorFields();
+}
+
+function removeLeftBullet(index) {
+  editingSlideData.left_bullets.splice(index, 1);
+  renderEditorFields();
+}
+
+function updateLeftBullet(index, value) {
+  editingSlideData.left_bullets[index] = value;
+}
+
+// Right bullets (comparison)
+function addRightBullet() {
+  editingSlideData.right_bullets = editingSlideData.right_bullets || [];
+  editingSlideData.right_bullets.push('');
+  renderEditorFields();
+}
+
+function removeRightBullet(index) {
+  editingSlideData.right_bullets.splice(index, 1);
+  renderEditorFields();
+}
+
+function updateRightBullet(index, value) {
+  editingSlideData.right_bullets[index] = value;
+}
+
+function saveSlideEdit() {
+  // Collect form data
+  const fields = ['title', 'subtitle', 'body_text', 'highlight', 'code', 'speaker_notes', 'left_title', 'right_title'];
+
+  fields.forEach(field => {
+    const input = document.getElementById(`edit-${field}`);
+    if (input) {
+      editingSlideData[field] = input.value;
+    }
+  });
+
+  // Update slide in project
+  currentProject.slides[editingSlideIndex] = editingSlideData;
+
+  // Close modal
+  closeSlideEditor();
+
+  // Re-render slides list
+  renderSlides();
+  toast('幻灯片已更新');
+}
+
+function closeSlideEditor() {
+  document.getElementById('slideEditorModal').classList.remove('show');
+  editingSlideIndex = null;
+  editingSlideData = null;
+}
+
+// ── Preview ──────────────────────────────────────
+async function previewSlides() {
+  if (!currentId) return;
+
+  // Save current changes first
+  await saveProject();
+
+  toast('正在生成预览...');
+
+  try {
+    const result = await api(`/api/projects/${currentId}/preview`, 'POST', { format: 'html' });
+
+    if (result.ok && result.outputs && result.outputs.length > 0) {
+      const htmlOutput = result.outputs.find(o => o.type === 'html');
+      if (htmlOutput) {
+        // Open preview in new window
+        window.open(htmlOutput.url, '_blank');
+        toast('预览已生成');
+      }
+    } else {
+      toast('预览生成失败：' + (result.error || '未知错误'));
+    }
+  } catch (error) {
+    toast('预览生成失败：' + error.message);
+  }
+}
+
+// ── History ──────────────────────────────────────
+async function showHistory() {
+  if (!currentId) return;
+
+  try {
+    const history = await api(`/api/projects/${currentId}/history`);
+
+    const modal = document.getElementById('historyModal');
+    const list = document.getElementById('historyList');
+    const count = document.getElementById('historyCount');
+
+    count.textContent = history.length;
+
+    if (history.length === 0) {
+      list.innerHTML = '<div class="empty"><h3>暂无历史版本</h3><p>编辑幻灯片后会自动保存版本</p></div>';
+    } else {
+      // Show in reverse order (newest first)
+      list.innerHTML = history.slice().reverse().map(h => `
+        <div class="history-item">
+          <div class="history-info">
+            <div class="history-version">版本 ${h.version}</div>
+            <div class="history-time">${formatTime(h.timestamp)}</div>
+            <div class="history-note">${esc(h.note || '无备注')}</div>
+          </div>
+          <div class="history-actions">
+            <button class="btn btn-sm btn-secondary" onclick="rollbackToVersion(${h.version})">回滚到此版本</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    modal.classList.add('show');
+  } catch (error) {
+    toast('获取历史记录失败：' + error.message);
+  }
+}
+
+async function rollbackToVersion(version) {
+  if (!confirm(`确定要回滚到版本 ${version} 吗？当前内容会被覆盖。`)) return;
+
+  try {
+    const result = await api(`/api/projects/${currentId}/rollback/${version}`, 'POST');
+
+    if (result.ok) {
+      toast('已回滚到版本 ' + version);
+      closeHistory();
+
+      // Reload project
+      currentProject = await api(`/api/projects/${currentId}`);
+      renderSlides();
+    } else {
+      toast('回滚失败：' + (result.error || '未知错误'));
+    }
+  } catch (error) {
+    toast('回滚失败：' + error.message);
+  }
+}
+
+function closeHistory() {
+  document.getElementById('historyModal').classList.remove('show');
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
 // ── Init ─────────────────────────────────────────
 loadProjects();
