@@ -54,6 +54,19 @@ document.getElementById('historyModal').addEventListener('click', function(e) {
   if (e.target === this) closeHistory();
 });
 
+// Close info modals on overlay click
+document.getElementById('aboutModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAbout();
+});
+
+document.getElementById('contactModal').addEventListener('click', function(e) {
+  if (e.target === this) closeContact();
+});
+
+document.getElementById('privacyModal').addEventListener('click', function(e) {
+  if (e.target === this) closePrivacy();
+});
+
 // Close modal on Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {

@@ -777,6 +777,31 @@ function formatTime(timestamp) {
   });
 }
 
+// ── Info Modals ──────────────────────────────────
+function showAbout() {
+  document.getElementById('aboutModal').classList.add('show');
+}
+
+function closeAbout() {
+  document.getElementById('aboutModal').classList.remove('show');
+}
+
+function showContact() {
+  document.getElementById('contactModal').classList.add('show');
+}
+
+function closeContact() {
+  document.getElementById('contactModal').classList.remove('show');
+}
+
+function showPrivacy() {
+  document.getElementById('privacyModal').classList.add('show');
+}
+
+function closePrivacy() {
+  document.getElementById('privacyModal').classList.remove('show');
+}
+
 // ── Init ─────────────────────────────────────────
 async function init() {
   await loadProjects();
