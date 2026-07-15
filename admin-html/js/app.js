@@ -779,6 +779,7 @@ function formatTime(timestamp) {
 
 // ── Info Modals ──────────────────────────────────
 function showAbout() {
+  renderModalContent('about');
   document.getElementById('aboutModal').classList.add('show');
 }
 
@@ -787,6 +788,7 @@ function closeAbout() {
 }
 
 function showContact() {
+  renderModalContent('contact');
   document.getElementById('contactModal').classList.add('show');
 }
 
@@ -795,6 +797,7 @@ function closeContact() {
 }
 
 function showPrivacy() {
+  renderModalContent('privacy');
   document.getElementById('privacyModal').classList.add('show');
 }
 
@@ -806,6 +809,7 @@ function closePrivacy() {
 async function init() {
   await loadProjects();
   await loadFooter();
+  await loadModals();
 
   // Restore state from URL
   const { projectId, tab } = parseURL();
@@ -836,6 +840,40 @@ async function loadFooter() {
 
   } catch (error) {
     console.error('Failed to load footer config:', error);
+  }
+}
+
+let modalsConfig = null;
+
+async function loadModals() {
+  try {
+    modalsConfig = await api('/api/config/modals');
+  } catch (error) {
+    console.error('Failed to load modals config:', error);
+  }
+}
+
+function renderModalContent(modalKey) {
+  if (!modalsConfig || !modalsConfig[modalKey]) return;
+
+  const modal = modalsConfig[modalKey];
+  const titleEl = document.getElementById(`${modalKey}Title`);
+  const contentEl = document.getElementById(`${modalKey}Content`);
+
+  if (titleEl) titleEl.textContent = modal.title;
+
+  if (contentEl) {
+    contentEl.innerHTML = modal.content.map(block => {
+      if (block.type === 'paragraph') {
+        const style = block.style === 'small' ? ' style="font-size:12px;color:var(--text3);margin-top:16px"' : '';
+        return `<p${style}>${block.text}</p>`;
+      } else if (block.type === 'heading') {
+        return `<h4>${block.text}</h4>`;
+      } else if (block.type === 'list') {
+        return `<ul>${block.items.map(item => `<li>${item}</li>`).join('')}</ul>`;
+      }
+      return '';
+    }).join('');
   }
 }
 

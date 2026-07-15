@@ -476,6 +476,19 @@ def api_footer_config():
     return jsonify(config)
 
 
+@app.route("/api/config/modals")
+def api_modals_config():
+    """Get modals configuration."""
+    modals_path = Path("config/modals.json")
+    if not modals_path.exists():
+        return jsonify({"error": "not found"}), 404
+
+    with open(modals_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    return jsonify(config)
+
+
 # ── Generation Logic ──────────────────────────────────────
 
 def _run_generate(pid: str, project: dict, provider: str, fmt: str):

@@ -213,23 +213,8 @@
 <!-- About Modal -->
 <div class="modal-overlay" id="aboutModal">
   <div class="modal">
-    <h3>ℹ️ 关于我们</h3>
-    <div class="info-content">
-      <p><strong>PPT Generator</strong> 是一个智能演示文稿生成工具。</p>
-      <p>通过 AI 技术，将您的想法快速转化为专业的幻灯片演示。</p>
-      <h4>核心特性</h4>
-      <ul>
-        <li>🤖 AI 驱动的叙事规划与内容生成</li>
-        <li>🎨 8 种精美布局模板</li>
-        <li>🎨 5 套专业配色方案</li>
-        <li>📝 完整的在线编辑器</li>
-        <li>📜 版本历史管理</li>
-        <li>👁 实时预览功能</li>
-      </ul>
-      <h4>技术栈</h4>
-      <p>Python · Flask · DeepSeek/Qwen · python-pptx</p>
-      <p style="margin-top:16px;font-size:12px;color:var(--text3)">版本 1.0.0 · © 2026</p>
-    </div>
+    <h3 id="aboutTitle"></h3>
+    <div class="info-content" id="aboutContent"></div>
     <button class="modal-close" onclick="closeAbout()">关闭</button>
   </div>
 </div>
@@ -237,16 +222,8 @@
 <!-- Contact Modal -->
 <div class="modal-overlay" id="contactModal">
   <div class="modal">
-    <h3>📧 联系我们</h3>
-    <div class="info-content">
-      <p>如果您有任何问题、建议或合作意向，欢迎通过以下方式联系我们：</p>
-      <h4>GitHub</h4>
-      <p><a href="https://github.com/wuxiumu/ppt-generator" target="_blank">github.com/wuxiumu/ppt-generator</a></p>
-      <h4>问题反馈</h4>
-      <p>在 GitHub 上提交 <a href="https://github.com/wuxiumu/ppt-generator/issues" target="_blank">Issue</a></p>
-      <h4>功能建议</h4>
-      <p>欢迎通过 GitHub Discussions 分享您的想法</p>
-    </div>
+    <h3 id="contactTitle"></h3>
+    <div class="info-content" id="contactContent"></div>
     <button class="modal-close" onclick="closeContact()">关闭</button>
   </div>
 </div>
@@ -254,21 +231,8 @@
 <!-- Privacy Modal -->
 <div class="modal-overlay" id="privacyModal">
   <div class="modal">
-    <h3>🔒 隐私协议</h3>
-    <div class="info-content">
-      <h4>数据收集</h4>
-      <p>本工具仅在本地运行，所有项目数据存储在您的本地服务器上。</p>
-      <h4>AI 服务</h4>
-      <p>生成内容时会调用第三方 AI 服务（DeepSeek/通义千问/OpenAI），您的输入内容会发送到相应的 API 服务。</p>
-      <h4>数据安全</h4>
-      <ul>
-        <li>项目数据存储在本地文件系统</li>
-        <li>不会上传到任何云端服务器</li>
-        <li>API 密钥存储在 .env 文件中，请妥善保管</li>
-      </ul>
-      <h4>开源承诺</h4>
-      <p>本项目完全开源，您可以查看源代码确认数据处理方式。</p>
-    </div>
+    <h3 id="privacyTitle"></h3>
+    <div class="info-content" id="privacyContent"></div>
     <button class="modal-close" onclick="closePrivacy()">关闭</button>
   </div>
 </div>
