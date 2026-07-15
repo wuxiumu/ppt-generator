@@ -11,6 +11,7 @@ env/
 
 # Generated files
 output/
+projects/
 debug/
 *.pptx
 *.html

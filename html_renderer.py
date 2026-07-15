@@ -239,8 +239,6 @@ class HTMLRenderer:
     --code-bg: {pal['code_bg']};
     --grad1: {pal['grad1']};
     --grad2: {pal['grad2']};
-    --slide-w: min(100vw, 177.78vh);
-    --slide-h: min(56.25vw, 100vh);
 }}
 
 html {{
@@ -248,6 +246,8 @@ html {{
     scroll-behavior: smooth;
     overflow-y: scroll;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
 }}
 
 body {{
@@ -255,25 +255,30 @@ body {{
     background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    overflow-x: hidden;
 }}
 
 /* ── Slide Base ───────────────────────────────── */
 .slide {{
-    width: var(--slide-w);
-    height: var(--slide-h);
+    width: 100vw;
+    height: 100vh;
     scroll-snap-align: start;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5vh 6vw;
+    padding: 6vh 8vw;
     overflow: hidden;
     background: var(--bg);
 }}
 
 .slide > div:first-child {{
     width: 100%;
-    max-width: 1100px;
+    max-width: 1200px;
+    margin: 0 auto;
     animation: fadeUp 0.5s ease-out;
 }}
 
