@@ -463,6 +463,19 @@ def api_providers():
     return jsonify(result)
 
 
+@app.route("/api/config/footer")
+def api_footer_config():
+    """Get footer configuration."""
+    footer_path = Path("config/footer.json")
+    if not footer_path.exists():
+        return jsonify({"error": "not found"}), 404
+
+    with open(footer_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    return jsonify(config)
+
+
 # ── Generation Logic ──────────────────────────────────────
 
 def _run_generate(pid: str, project: dict, provider: str, fmt: str):

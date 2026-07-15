@@ -805,12 +805,37 @@ function closePrivacy() {
 // ── Init ─────────────────────────────────────────
 async function init() {
   await loadProjects();
+  await loadFooter();
 
   // Restore state from URL
   const { projectId, tab } = parseURL();
   if (projectId && allProjects.find(p => p.id === projectId)) {
     await selectProject(projectId);
     switchTab(tab);
+  }
+}
+
+async function loadFooter() {
+  try {
+    const config = await api('/api/config/footer');
+
+    // Render links
+    const linksContainer = document.getElementById('footerLinks');
+    linksContainer.innerHTML = config.links.map(link => {
+      if (link.external) {
+        return `<a href="${link.url}" target="_blank">${link.icon} ${esc(link.text)}</a>`;
+      } else if (link.action) {
+        return `<a href="#" onclick="${link.action}(); return false;">${link.icon} ${esc(link.text)}</a>`;
+      }
+      return '';
+    }).join('');
+
+    // Render copyright
+    const infoContainer = document.getElementById('footerInfo');
+    infoContainer.innerHTML = config.copyright.map(line => `<p>${esc(line)}</p>`).join('');
+
+  } catch (error) {
+    console.error('Failed to load footer config:', error);
   }
 }
 
