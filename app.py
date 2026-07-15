@@ -721,6 +721,20 @@ def save_comic(cid: str, data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def create_comic_history_snapshot(cid: str, comic: dict, note: str = ""):
+    """Create a history snapshot of current comic pages."""
+    if "history" not in comic:
+        comic["history"] = []
+    version = len(comic["history"]) + 1
+    snapshot = {
+        "version": version,
+        "timestamp": datetime.now().isoformat(),
+        "pages": comic.get("pages", []),
+        "note": note,
+    }
+    comic["history"].append(snapshot)
+
+
 def list_comics() -> list[dict]:
     results = []
     for d in sorted(COMICS_DIR.iterdir()):
@@ -741,7 +755,7 @@ def list_comic_outputs(cid: str) -> list[dict]:
         return []
     files = []
     for f in sorted(out_dir.iterdir(), reverse=True):
-        if f.suffix in (".html", ".pdf"):
+        if f.suffix in (".html", ".pdf", ".pptx"):
             files.append({
                 "name": f.name,
                 "ext": f.suffix,
@@ -820,11 +834,45 @@ def api_update_comic_pages(cid):
         return jsonify({"error": "not found"}), 404
     pages = request.json
     if isinstance(pages, list):
+        # Create history snapshot before updating
+        create_comic_history_snapshot(cid, comic, "编辑页面")
+
         comic["pages"] = pages
         comic["updated_at"] = datetime.now().isoformat()
         save_comic(cid, comic)
         return jsonify({"ok": True, "count": len(pages)})
     return jsonify({"error": "expected array"}), 400
+
+
+@app.route("/api/comics/<cid>/history", methods=["GET"])
+def api_get_comic_history(cid):
+    """Get version history for a comic."""
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+    history = comic.get("history", [])
+    return jsonify(history)
+
+
+@app.route("/api/comics/<cid>/rollback/<int:version>", methods=["POST"])
+def api_rollback_comic(cid, version):
+    """Rollback a comic to a specific version."""
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+
+    history = comic.get("history", [])
+    target = next((h for h in history if h["version"] == version), None)
+    if not target:
+        return jsonify({"error": "version not found"}), 404
+
+    # Snapshot current state before rollback
+    create_comic_history_snapshot(cid, comic, f"回滚到版本 {version}")
+
+    comic["pages"] = target["pages"]
+    comic["updated_at"] = datetime.now().isoformat()
+    save_comic(cid, comic)
+    return jsonify({"ok": True, "restored_version": version})
 
 
 @app.route("/api/comics/<cid>/plan", methods=["PUT"])
@@ -967,11 +1015,21 @@ def _run_comic_generate(cid: str, comic: dict, provider: str, fmt: str):
         s["progress"] = "Stage 2: 内容生成中..."
         pages = loop.run_until_complete(write_all_pages(llm, plan_data, concurrency=3))
 
-        # Save pages
+        # Save pages (snapshot previous pages first)
+        if comic.get("pages"):
+            create_comic_history_snapshot(cid, comic, "生成新版本")
         comic["pages"] = pages
         save_comic(cid, comic)
 
         s["progress"] = f"内容完成({len(pages)}页), 渲染中..."
+
+        # Stage 2.5: Image Generation (for ppt_img format)
+        image_paths = []
+        if fmt == "ppt_img":
+            s["progress"] = "Stage 2.5: AI插画生成中..."
+            from comic_image_gen import generate_page_images
+            img_dir = str(COMICS_DIR / cid / "images")
+            image_paths = generate_page_images(pages, plan_data, img_dir)
 
         # Stage 3: Render
         out_dir = COMICS_DIR / cid / "output"
@@ -994,6 +1052,14 @@ def _run_comic_generate(cid: str, comic: dict, provider: str, fmt: str):
                 outputs.append(os.path.basename(pdf_path))
             except ImportError:
                 pass  # Skip PDF if weasyprint not installed
+
+        if fmt in ("ppt", "ppt_img"):
+            ppt_path = f"{base}.pptx"
+            from comic_ppt_renderer import ComicPPTRenderer
+            if not image_paths:
+                image_paths = [""] * len(pages)
+            ComicPPTRenderer().render(pages, palette, plan_data, image_paths, out=ppt_path)
+            outputs.append(os.path.basename(ppt_path))
 
         elapsed = time.time() - s["started"]
         cost = llm.get_cost_estimate()

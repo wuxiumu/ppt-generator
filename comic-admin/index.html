@@ -129,6 +129,7 @@
       <div class="tab-pane" id="tab-pages">
         <div class="pages-toolbar" id="pagesToolbar">
           <button class="btn btn-secondary btn-sm" onclick="previewComic()">预览漫画</button>
+          <button class="btn btn-secondary btn-sm" onclick="showHistory()">📜 历史版本</button>
           <span class="pages-hint">共 <span id="pageCount">0</span> 页</span>
         </div>
         <div id="pagesList"></div>
@@ -147,6 +148,8 @@
               <label>输出格式</label>
               <select id="comicFormat">
                 <option value="html">HTML</option>
+                <option value="ppt">PPT (纯文字)</option>
+                <option value="ppt_img">PPT + AI 插画</option>
                 <option value="pdf">PDF</option>
                 <option value="both">HTML + PDF</option>
               </select>
@@ -167,6 +170,16 @@
 
 <!-- Toast -->
 <div class="save-toast" id="toast"></div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal modal-large">
+    <h3>📜 历史版本</h3>
+    <p class="modal-sub">共 <span id="historyCount">0</span> 个版本</p>
+    <div class="history-list" id="historyList"></div>
+    <button class="modal-close" onclick="closeHistory()">关闭</button>
+  </div>
+</div>
 
 <script src="/comic-admin/js/app.js"></script>
 </body>

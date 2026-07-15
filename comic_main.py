@@ -363,8 +363,11 @@ async def main():
     parser.add_argument("-c", "--concurrency", type=int, default=3,
                         help="Parallel LLM calls")
     parser.add_argument("-f", "--format", default="html",
-                        choices=["html", "pdf", "both"],
-                        help="Output format")
+                        choices=["html", "pdf", "both", "ppt", "ppt_img"],
+                        help="Output format (ppt_img = PPT with AI images)")
+    parser.add_argument("--img-provider", default=None,
+                        choices=["pollinations", "dashscope", "siliconflow"],
+                        help="Image generation provider (for ppt_img format)")
     args = parser.parse_args()
 
     load_dotenv()
@@ -435,8 +438,16 @@ async def main():
         for iss in issues[:5]:
             print(f"     - {iss}")
 
-    # ── Stage 3: Render ──
+    # ── Stage 2.5: Image Generation (for ppt_img) ──
+    image_paths = []
     fmt = args.format
+    if fmt == "ppt_img":
+        from comic_image_gen import generate_page_images
+        img_dir = os.path.join(os.path.dirname(base_name) or "comic-output", "images")
+        img_provider = args.img_provider  # None = auto-detect
+        image_paths = generate_page_images(pages, plan_data, img_dir, provider=img_provider)
+
+    # ── Stage 3: Render ──
     output_files = []
 
     if fmt in ("html", "both"):
@@ -455,6 +466,15 @@ async def main():
             output_files.append(pdf_out)
         except ImportError:
             print("  ⚠️  PDF渲染需要 weasyprint，跳过。pip install weasyprint")
+
+    if fmt in ("ppt", "ppt_img"):
+        ppt_out = f"{base_name}.pptx"
+        print("\n📊 Stage 3: PPT漫画渲染 ...")
+        from comic_ppt_renderer import ComicPPTRenderer
+        if not image_paths:
+            image_paths = [""] * len(pages)  # No images, use placeholder
+        ComicPPTRenderer().render(pages, palette, plan_data, image_paths, out=ppt_out)
+        output_files.append(ppt_out)
 
     total_time = time.time() - t0
     cost = llm.get_cost_estimate()

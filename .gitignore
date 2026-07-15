@@ -11,6 +11,7 @@ env/
 
 # Generated output (PPTX/HTML from runs)
 output/
+outputs/
 comic-output/
 projects/
 comics/

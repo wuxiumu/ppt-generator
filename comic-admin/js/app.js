@@ -2,6 +2,7 @@
 let authToken = sessionStorage.getItem('admin_token') || '';
 let currentComicId = null;
 let currentComic = null;
+let currentTab = 'info';
 let templates = {};
 let providers = {};
 let statusTimer = null;
@@ -149,12 +150,39 @@ async function init() {
 
   // Load comic list
   await loadComicList();
+
+  // Restore state from URL
+  const { comicId, tab } = parseURL();
+  if (comicId) {
+    // Find comic in loaded list
+    const res = await api('/api/comics');
+    const comics = await res.json();
+    if (comics.find(c => c.id === comicId)) {
+      await selectComic(comicId);
+      switchTab(tab);
+    }
+  }
 }
 
 // ── Tab switching ────────────────────────────────────
 function switchTab(tab) {
+  currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+  updateURL();
+}
+
+// ── URL Routing ──────────────────────────────────────
+function updateURL() {
+  const hash = currentComicId ? `#${currentComicId}/${currentTab || 'info'}` : '';
+  history.replaceState(null, '', hash || window.location.pathname);
+}
+
+function parseURL() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return { comicId: null, tab: 'info' };
+  const [comicId, tab] = hash.split('/');
+  return { comicId, tab: tab || 'info' };
 }
 
 // ── Comic List ───────────────────────────────────────
@@ -216,6 +244,9 @@ async function selectComic(cid) {
   // Re-highlight
   loadComicList();
 
+  // Update URL with current state
+  updateURL();
+
   // Check generation status
   pollStatus();
 }
@@ -260,6 +291,7 @@ async function deleteComic() {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.getElementById('emptyState').style.display = 'block';
   loadComicList();
+  updateURL();
   toast('已删除');
 }
 
@@ -409,6 +441,79 @@ async function previewComic() {
   } catch (e) {
     toast('预览失败: ' + e.message);
   }
+}
+
+// ── History ──────────────────────────────────────────
+async function showHistory() {
+  if (!currentComicId) return;
+
+  try {
+    const res = await api(`/api/comics/${currentComicId}/history`);
+    const history = await res.json();
+
+    const modal = document.getElementById('historyModal');
+    const list = document.getElementById('historyList');
+    const count = document.getElementById('historyCount');
+
+    count.textContent = history.length;
+
+    if (history.length === 0) {
+      list.innerHTML = '<div class="empty"><h3>暂无历史版本</h3><p>编辑页面或生成新内容后会自动保存版本</p></div>';
+    } else {
+      // Show in reverse order (newest first)
+      list.innerHTML = history.slice().reverse().map(h => `
+        <div class="history-item">
+          <div class="history-info">
+            <div class="history-version">版本 ${h.version}</div>
+            <div class="history-time">${formatTime(h.timestamp)}</div>
+            <div class="history-note">${esc(h.note || '无备注')}</div>
+          </div>
+          <div class="history-actions">
+            <button class="btn btn-secondary btn-sm" onclick="rollbackToVersion(${h.version})">回滚到此版本</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    modal.classList.add('show');
+  } catch (error) {
+    toast('获取历史记录失败：' + error.message);
+  }
+}
+
+async function rollbackToVersion(version) {
+  if (!confirm(`确定要回滚到版本 ${version} 吗？当前内容会被覆盖。`)) return;
+
+  try {
+    const res = await api(`/api/comics/${currentComicId}/rollback/${version}`, { method: 'POST' });
+    const result = await res.json();
+
+    if (result.ok) {
+      toast('已回滚到版本 ' + version);
+      closeHistory();
+      await selectComic(currentComicId);
+    } else {
+      toast('回滚失败：' + (result.error || '未知错误'));
+    }
+  } catch (error) {
+    toast('回滚失败：' + error.message);
+  }
+}
+
+function closeHistory() {
+  document.getElementById('historyModal').classList.remove('show');
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 // ── Utils ────────────────────────────────────────────
