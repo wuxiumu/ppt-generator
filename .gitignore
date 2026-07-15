@@ -9,15 +9,15 @@ venv/
 ENV/
 env/
 
-# Generated files
+# Generated output (PPTX/HTML from runs)
 output/
 projects/
 debug/
-*.pptx
-*.html
+log/
 
 # Environment
 .env
+.env.local
 
 # OS
 .DS_Store

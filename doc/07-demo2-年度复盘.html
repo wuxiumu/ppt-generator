@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2025 我的年度复盘</title>
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #FFFDF7;
+    --surface: #FAF5FF;
+    --text: #2D3748;
+    --text2: #718096;
+    --text3: #A0AEC0;
+    --accent1: #9F7AEA;
+    --accent2: #F687B3;
+    --accent3: #68D391;
+    --accent4: #FBD38D;
+    --on-accent: #FFFFFF;
+    --divider: #E9D8FD;
+    --code-bg: #2D3748;
+    --grad1: linear-gradient(135deg, #9F7AEA 0%, #F687B3 100%);
+    --grad2: linear-gradient(135deg, #667eea 0%, #9F7AEA 100%);
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
+}
+
+body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+/* ── Slide Base ───────────────────────────────── */
+.slide {
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6vh 8vw;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.slide > div:first-child {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-num {
+    position: absolute;
+    bottom: 3vh;
+    right: 4vw;
+    font-size: clamp(10px, 1.2vh, 14px);
+    color: var(--text3);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Title Slide ──────────────────────────────── */
+.slide-title {
+    background: var(--bg);
+    position: relative;
+}
+.title-content {
+    position: relative;
+    z-index: 1;
+}
+.title-content .accent-bar {
+    width: 4px;
+    height: 80px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 2.5vh;
+}
+.title-text {
+    font-size: clamp(28px, 5vh, 56px);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 2vh;
+    letter-spacing: -0.02em;
+}
+.subtitle-text {
+    font-size: clamp(16px, 2.5vh, 26px);
+    color: var(--text2);
+    font-weight: 400;
+    line-height: 1.5;
+}
+.deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.title-content .c1 {
+    width: 220px; height: 220px;
+    background: var(--accent1);
+    right: -40px; bottom: -30px;
+}
+.title-content .c2 {
+    width: 140px; height: 140px;
+    background: var(--accent2);
+    right: 60px; bottom: 80px;
+}
+
+/* ── Section Slide ────────────────────────────── */
+.slide-section {
+    background: var(--grad1);
+}
+.section-content {
+    color: var(--on-accent);
+    position: relative;
+}
+.section-number {
+    font-size: clamp(60px, 12vh, 120px);
+    font-weight: 900;
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 1vh;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.section-title {
+    font-size: clamp(24px, 4.5vh, 48px);
+    font-weight: 700;
+    margin-bottom: 1.5vh;
+}
+.section-subtitle {
+    font-size: clamp(14px, 2vh, 22px);
+    opacity: 0.8;
+}
+.section-content .c3 {
+    width: 300px; height: 300px;
+    background: var(--accent2);
+    right: -80px; top: -60px;
+    opacity: 0.08;
+}
+
+/* ── Bullets Slide ────────────────────────────── */
+.bullets-content {
+    position: relative;
+}
+.bullets-content .accent-bar {
+    width: 4px;
+    height: 36px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 1.5vh;
+}
+.slide-title {
+    font-size: clamp(20px, 3.5vh, 36px);
+    font-weight: 700;
+    margin-bottom: 3vh;
+    color: var(--text);
+}
+.bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8vh;
+}
+.bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: clamp(14px, 2.2vh, 22px);
+    line-height: 1.6;
+    color: var(--text);
+}
+.bullet-dot {
+    flex-shrink: 0;
+    width: 8px; height: 8px;
+    background: var(--accent1);
+    border-radius: 50%;
+    margin-top: 0.6em;
+}
+.body-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    line-height: 1.7;
+}
+
+/* ── Statement Slide ──────────────────────────── */
+.slide-statement {
+    background: var(--bg);
+}
+.statement-content {
+    text-align: center;
+    max-width: 85%;
+    margin: 0 auto;
+}
+.quote-mark {
+    font-size: clamp(50px, 10vh, 100px);
+    color: var(--accent1);
+    opacity: 0.3;
+    line-height: 0.5;
+    font-family: Georgia, serif;
+    margin-bottom: 2vh;
+}
+.statement-text {
+    font-size: clamp(20px, 3.5vh, 38px);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text);
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.attr-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text3);
+    font-style: italic;
+}
+
+/* ── Comparison Slide ─────────────────────────── */
+.comparison-content .slide-title {
+    margin-bottom: 3vh;
+}
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0 3vw;
+    align-items: start;
+}
+.compare-divider {
+    background: var(--divider);
+    height: 100%;
+    min-height: 200px;
+    border-radius: 1px;
+}
+.compare-col h3 {
+    font-size: clamp(16px, 2.3vh, 24px);
+    font-weight: 700;
+    margin-bottom: 2vh;
+    padding-bottom: 1vh;
+}
+.col-left h3 { color: var(--accent1); border-bottom: 2px solid var(--accent1); }
+.col-right h3 { color: var(--accent2); border-bottom: 2px solid var(--accent2); }
+.compare-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+}
+.compare-col li {
+    font-size: clamp(13px, 1.9vh, 19px);
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 16px;
+    position: relative;
+}
+.compare-col li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 0.4em;
+}
+.col-left li::before { color: var(--accent1); }
+.col-right li::before { color: var(--accent2); }
+
+/* ── Big Number Slide ─────────────────────────── */
+.big-number-content {
+    text-align: center;
+}
+.bn-number {
+    font-size: clamp(60px, 14vh, 140px);
+    font-weight: 900;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.bn-label {
+    font-size: clamp(18px, 2.8vh, 30px);
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2vh;
+}
+.bn-context {
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    margin-top: 1.5vh;
+}
+
+/* ── Code Slide ───────────────────────────────── */
+.code-content .slide-title {
+    margin-bottom: 2.5vh;
+}
+.code-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3vw;
+    align-items: start;
+}
+.code-block {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 2.5vh 2vw;
+    overflow-x: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+.code-block code {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: clamp(11px, 1.5vh, 16px);
+    line-height: 1.7;
+    color: #D4D4D4;
+    white-space: pre;
+}
+.code-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    padding-top: 1vh;
+}
+.note-item {
+    font-size: clamp(12px, 1.7vh, 17px);
+    color: var(--text2);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+}
+.note-arrow {
+    color: var(--accent1);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── End Slide ────────────────────────────────── */
+.slide-end {
+    background: var(--grad1);
+}
+.end-content {
+    text-align: center;
+    color: var(--on-accent);
+    position: relative;
+}
+.end-thanks {
+    font-size: clamp(32px, 6vh, 64px);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.end-contact {
+    margin-top: 3vh;
+    font-size: clamp(14px, 2vh, 20px);
+    opacity: 0.85;
+}
+.end-content .c4 {
+    width: 160px; height: 160px;
+    background: var(--accent2);
+    left: -40px; top: -30px;
+    opacity: 0.1;
+}
+.end-content .c5 {
+    width: 120px; height: 120px;
+    background: var(--accent2);
+    right: -20px; bottom: -20px;
+    opacity: 0.1;
+}
+
+/* ── Navigation hint ──────────────────────────── */
+.nav-hint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: var(--text3);
+    opacity: 0.6;
+    z-index: 100;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+</style>
+</head>
+<body>
+
+<section class="slide slide-title" data-slide="1">
+
+        <div class="title-content">
+            <div class="accent-bar"></div>
+            <h1 class="title-text">2025 我的年度复盘</h1>
+            <p class="subtitle-text">踩过的坑、闪光的时刻，以及明年想试的方向</p>
+            <div class="deco-circle c1"></div>
+            <div class="deco-circle c2"></div>
+        </div>
+
+</section>
+<section class="slide slide-statement" data-slide="2">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">2025年，我做了很多事，但最难忘的，往往是那些没做成的事。</blockquote>
+            
+        </div>
+<div class="page-num">2 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="3">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">那些没做成的事</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">年初计划满满，年末只完成一半</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">熬夜赶工，忘了照顾身体</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">想学新技能，收藏夹吃灰</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">和朋友渐行渐远</span></li></ul>
+            <p class="body-text">是不是你也这样？别急，这些坑我都踩过。</p>
+        </div>
+<div class="page-num">3 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="4">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">今晚的分享地图</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">我做了哪几件大事：高光与遗憾</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">我踩过的几个坑：血泪教训</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">明年想试的方向：新计划</span></li></ul>
+            
+        </div>
+<div class="page-num">4 / 28</div>
+</section>
+<section class="slide slide-section" data-slide="5">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">01 那些我做成的事</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">5 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="6">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">我的第一件大事</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">开发了一个个人效率工具：自动化处理日报</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">因为每天手动写日报太耗时，想偷个懒</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">断断续续写了3个月，终于能用了</span></li></ul>
+            <p class="body-text">虽然功能简单，但看到自己写的代码真的跑起来，还挺有成就感的。</p>
+        </div>
+<div class="page-num">6 / 28</div>
+</section>
+<section class="slide slide-big_number" data-slide="7">
+
+        <div class="big-number-content">
+            <div class="bn-number">5000+</div>
+            <h3 class="bn-label">第二件大事</h3>
+            
+        </div>
+<div class="page-num">7 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="8">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">换城换工作</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">从北京到杭州，从大厂到创业公司</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">告别通勤3小时，换来在家办公</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">挑战：从螺丝钉到多面手</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">成长：主动规划，更懂自己</span></li></ul>
+            
+        </div>
+<div class="page-num">8 / 28</div>
+</section>
+<section class="slide slide-comparison" data-slide="9">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">从通勤到在家</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>之前</h3>
+                    <ul><li>每天通勤3小时，在地铁上挤成纸片</li>
+<li>加班到深夜，回家只想瘫倒</li>
+<li>周末被琐事填满，毫无个人时间</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>之后</h3>
+                    <ul><li>在家办公，省下通勤时间读书运动</li>
+<li>工作生活平衡，晚上还能学新技能</li>
+<li>周末自由安排，重拾摄影和烹饪</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">9 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="10">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">第三件大事：学会摄影</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">入门：兴奋，买了相机，看了教程</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">放弃：拍不出好片，受挫，搁置半年</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">捡起：参加摄影群，每天拍一张</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">进步：慢慢找到感觉，开始有作品</span></li></ul>
+            
+        </div>
+<div class="page-num">10 / 28</div>
+</section>
+<section class="slide slide-big_number" data-slide="11">
+
+        <div class="big-number-content">
+            <div class="bn-number">5000张照片 200篇日记</div>
+            <h3 class="bn-label">坚持的成果</h3>
+            <p class="bn-context">拍了5000张照片，精选了50张；写了200篇日记，记录了365天的成长。数字背后，是无数次的尝试与不放弃。</p>
+        </div>
+<div class="page-num">11 / 28</div>
+</section>
+<section class="slide slide-statement" data-slide="12">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">这些事让我明白，坚持比完美更重要。</blockquote>
+            
+        </div>
+<div class="page-num">12 / 28</div>
+</section>
+<section class="slide slide-section" data-slide="13">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">那些我踩过的坑</h2>
+            <p class="section-subtitle">02</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">13 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="14">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">坑一：过度追求完美</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">一个项目改了无数版</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">错过最佳上线时机</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">先完成，再完美</span></li></ul>
+            
+        </div>
+<div class="page-num">14 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="15">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">第二个坑：忽视健康</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">连续熬夜后生病，效率反降</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">身体是1，其他是0</span></li></ul>
+            
+        </div>
+<div class="page-num">15 / 28</div>
+</section>
+<section class="slide slide-comparison" data-slide="16">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">第三个坑：多任务处理</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>我以为</h3>
+                    <ul><li>同时做几件事效率更高</li>
+<li>能充分利用时间</li>
+<li>显得自己很能干</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>实际上</h3>
+                    <ul><li>注意力碎片化，每件事都做不好</li>
+<li>切换任务消耗大量精力</li>
+<li>质量下降，错误增多</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">16 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="17">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">坑四：社交绝缘体</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">朋友是人生的充电宝</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">独处虽好，莫忘人间烟火</span></li></ul>
+            
+        </div>
+<div class="page-num">17 / 28</div>
+</section>
+<section class="slide slide-statement" data-slide="18">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">每个坑都是一次升级</blockquote>
+            <p class="attr-text">— 关键是从中爬出来的姿势</p>
+        </div>
+<div class="page-num">18 / 28</div>
+</section>
+<section class="slide slide-section" data-slide="19">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">明年想试的方向</h2>
+            <p class="section-subtitle">03</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">19 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="20">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">深耕一个领域</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">专注前端开发：学习React源码</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">瑜伽教学：考取RYT300认证</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">写作：每日输出500字</span></li></ul>
+            
+        </div>
+<div class="page-num">20 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="21">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">副业与创业初探</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">开一家线上小店，试水销售</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">运营自媒体账号，分享兴趣</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">接自由职业项目，积累经验</span></li></ul>
+            
+        </div>
+<div class="page-num">21 / 28</div>
+</section>
+<section class="slide slide-statement" data-slide="22">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">探索世界，多旅行多体验</blockquote>
+            
+        </div>
+<div class="page-num">22 / 28</div>
+</section>
+<section class="slide slide-big_number" data-slide="23">
+
+        <div class="big-number-content">
+            <div class="bn-number">50 本书 / 500 公里 / 5 万元</div>
+            <h3 class="bn-label">2026 数字目标</h3>
+            
+        </div>
+<div class="page-num">23 / 28</div>
+</section>
+<section class="slide slide-statement" data-slide="24">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">2026，成为更好的自己</blockquote>
+            
+        </div>
+<div class="page-num">24 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="25">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">回望与前行</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">大事小情，有收获也有遗憾</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">踩坑学乖，教训变经验</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">明年方向已定，满怀期待</span></li></ul>
+            
+        </div>
+<div class="page-num">25 / 28</div>
+</section>
+<section class="slide slide-bullets" data-slide="26">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">现在就行动</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">今晚就写下自己的年度复盘</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">选出三个关键词作为明年的指南</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">分享给一个朋友，互相监督</span></li></ul>
+            
+        </div>
+<div class="page-num">26 / 28</div>
+</section>
+<section class="slide slide-statement" data-slide="27">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">人生不是轨道，而是一片旷野。2026，我们旷野见。</blockquote>
+            
+        </div>
+<div class="page-num">27 / 28</div>
+</section>
+<section class="slide slide-end" data-slide="28">
+
+        <div class="end-content">
+            <h1 class="end-thanks">感谢观看</h1>
+            <p class="end-contact">愿你我的2026，闪闪发光。</p>
+            <div class="deco-circle c4"></div>
+            <div class="deco-circle c5"></div>
+        </div>
+
+</section>
+
+<div class="nav-hint">↑ ↓ 翻页 &nbsp;|&nbsp; 点击两侧区域翻页</div>
+
+<script>
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    const h = window.innerHeight;
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.scrollBy({ top: h, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        window.scrollBy({ top: -h, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+        e.preventDefault();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+});
+
+// Click sides to navigate
+document.addEventListener('click', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    // Only trigger on side areas (left/right 15%), not center
+    if (y > 0.2 && y < 0.8) {
+        if (x < 0.15) {
+            window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+        } else if (x > 0.85) {
+            window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+        }
+    }
+});
+
+// Hide nav hint after 5s
+setTimeout(() => {
+    document.querySelector('.nav-hint').style.opacity = '0';
+}, 5000);
+</script>
+</body>
+</html>

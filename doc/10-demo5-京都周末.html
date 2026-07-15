@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>周末两天玩遍京都</title>
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #FFF8F0;
+    --surface: #FFF0E0;
+    --text: #2D1B00;
+    --text2: #6B4E37;
+    --text3: #A08B7A;
+    --accent1: #C67B5C;
+    --accent2: #E87461;
+    --accent3: #4A7C59;
+    --accent4: #F4C542;
+    --on-accent: #FFFFFF;
+    --divider: #E8D5C4;
+    --code-bg: #2D1B00;
+    --grad1: linear-gradient(135deg, #C67B5C 0%, #F4C542 100%);
+    --grad2: linear-gradient(135deg, #E87461 0%, #C67B5C 100%);
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
+}
+
+body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+/* ── Slide Base ───────────────────────────────── */
+.slide {
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6vh 8vw;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.slide > div:first-child {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-num {
+    position: absolute;
+    bottom: 3vh;
+    right: 4vw;
+    font-size: clamp(10px, 1.2vh, 14px);
+    color: var(--text3);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Title Slide ──────────────────────────────── */
+.slide-title {
+    background: var(--bg);
+    position: relative;
+}
+.title-content {
+    position: relative;
+    z-index: 1;
+}
+.title-content .accent-bar {
+    width: 4px;
+    height: 80px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 2.5vh;
+}
+.title-text {
+    font-size: clamp(28px, 5vh, 56px);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 2vh;
+    letter-spacing: -0.02em;
+}
+.subtitle-text {
+    font-size: clamp(16px, 2.5vh, 26px);
+    color: var(--text2);
+    font-weight: 400;
+    line-height: 1.5;
+}
+.deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.title-content .c1 {
+    width: 220px; height: 220px;
+    background: var(--accent1);
+    right: -40px; bottom: -30px;
+}
+.title-content .c2 {
+    width: 140px; height: 140px;
+    background: var(--accent2);
+    right: 60px; bottom: 80px;
+}
+
+/* ── Section Slide ────────────────────────────── */
+.slide-section {
+    background: var(--grad1);
+}
+.section-content {
+    color: var(--on-accent);
+    position: relative;
+}
+.section-number {
+    font-size: clamp(60px, 12vh, 120px);
+    font-weight: 900;
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 1vh;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.section-title {
+    font-size: clamp(24px, 4.5vh, 48px);
+    font-weight: 700;
+    margin-bottom: 1.5vh;
+}
+.section-subtitle {
+    font-size: clamp(14px, 2vh, 22px);
+    opacity: 0.8;
+}
+.section-content .c3 {
+    width: 300px; height: 300px;
+    background: var(--accent2);
+    right: -80px; top: -60px;
+    opacity: 0.08;
+}
+
+/* ── Bullets Slide ────────────────────────────── */
+.bullets-content {
+    position: relative;
+}
+.bullets-content .accent-bar {
+    width: 4px;
+    height: 36px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 1.5vh;
+}
+.slide-title {
+    font-size: clamp(20px, 3.5vh, 36px);
+    font-weight: 700;
+    margin-bottom: 3vh;
+    color: var(--text);
+}
+.bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8vh;
+}
+.bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: clamp(14px, 2.2vh, 22px);
+    line-height: 1.6;
+    color: var(--text);
+}
+.bullet-dot {
+    flex-shrink: 0;
+    width: 8px; height: 8px;
+    background: var(--accent1);
+    border-radius: 50%;
+    margin-top: 0.6em;
+}
+.body-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    line-height: 1.7;
+}
+
+/* ── Statement Slide ──────────────────────────── */
+.slide-statement {
+    background: var(--bg);
+}
+.statement-content {
+    text-align: center;
+    max-width: 85%;
+    margin: 0 auto;
+}
+.quote-mark {
+    font-size: clamp(50px, 10vh, 100px);
+    color: var(--accent1);
+    opacity: 0.3;
+    line-height: 0.5;
+    font-family: Georgia, serif;
+    margin-bottom: 2vh;
+}
+.statement-text {
+    font-size: clamp(20px, 3.5vh, 38px);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text);
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.attr-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text3);
+    font-style: italic;
+}
+
+/* ── Comparison Slide ─────────────────────────── */
+.comparison-content .slide-title {
+    margin-bottom: 3vh;
+}
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0 3vw;
+    align-items: start;
+}
+.compare-divider {
+    background: var(--divider);
+    height: 100%;
+    min-height: 200px;
+    border-radius: 1px;
+}
+.compare-col h3 {
+    font-size: clamp(16px, 2.3vh, 24px);
+    font-weight: 700;
+    margin-bottom: 2vh;
+    padding-bottom: 1vh;
+}
+.col-left h3 { color: var(--accent1); border-bottom: 2px solid var(--accent1); }
+.col-right h3 { color: var(--accent2); border-bottom: 2px solid var(--accent2); }
+.compare-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+}
+.compare-col li {
+    font-size: clamp(13px, 1.9vh, 19px);
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 16px;
+    position: relative;
+}
+.compare-col li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 0.4em;
+}
+.col-left li::before { color: var(--accent1); }
+.col-right li::before { color: var(--accent2); }
+
+/* ── Big Number Slide ─────────────────────────── */
+.big-number-content {
+    text-align: center;
+}
+.bn-number {
+    font-size: clamp(60px, 14vh, 140px);
+    font-weight: 900;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.bn-label {
+    font-size: clamp(18px, 2.8vh, 30px);
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2vh;
+}
+.bn-context {
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    margin-top: 1.5vh;
+}
+
+/* ── Code Slide ───────────────────────────────── */
+.code-content .slide-title {
+    margin-bottom: 2.5vh;
+}
+.code-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3vw;
+    align-items: start;
+}
+.code-block {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 2.5vh 2vw;
+    overflow-x: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+.code-block code {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: clamp(11px, 1.5vh, 16px);
+    line-height: 1.7;
+    color: #D4D4D4;
+    white-space: pre;
+}
+.code-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    padding-top: 1vh;
+}
+.note-item {
+    font-size: clamp(12px, 1.7vh, 17px);
+    color: var(--text2);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+}
+.note-arrow {
+    color: var(--accent1);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── End Slide ────────────────────────────────── */
+.slide-end {
+    background: var(--grad1);
+}
+.end-content {
+    text-align: center;
+    color: var(--on-accent);
+    position: relative;
+}
+.end-thanks {
+    font-size: clamp(32px, 6vh, 64px);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.end-contact {
+    margin-top: 3vh;
+    font-size: clamp(14px, 2vh, 20px);
+    opacity: 0.85;
+}
+.end-content .c4 {
+    width: 160px; height: 160px;
+    background: var(--accent2);
+    left: -40px; top: -30px;
+    opacity: 0.1;
+}
+.end-content .c5 {
+    width: 120px; height: 120px;
+    background: var(--accent2);
+    right: -20px; bottom: -20px;
+    opacity: 0.1;
+}
+
+/* ── Navigation hint ──────────────────────────── */
+.nav-hint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: var(--text3);
+    opacity: 0.6;
+    z-index: 100;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+</style>
+</head>
+<body>
+
+<section class="slide slide-title" data-slide="1">
+
+        <div class="title-content">
+            <div class="accent-bar"></div>
+            <h1 class="title-text">周末两天玩遍京都！</h1>
+            <p class="subtitle-text">人均3000元，经典与小众全收录</p>
+            <div class="deco-circle c1"></div>
+            <div class="deco-circle c2"></div>
+        </div>
+
+</section>
+<section class="slide slide-statement" data-slide="2">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">第一次去京都，两天够吗？</blockquote>
+            
+        </div>
+<div class="page-num">2 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="3">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">你的困扰，我们都懂</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">只有两天时间，不想走马观花</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">预算有限，但想体验精髓</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">第一次去日本，怕踩坑</span></li></ul>
+            <p class="body-text">这些烦恼，我们来帮你解决。</p>
+        </div>
+<div class="page-num">3 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="4">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">两天玩转日本</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">涵盖经典与小众</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">高效不累</span></li></ul>
+            
+        </div>
+<div class="page-num">4 / 25</div>
+</section>
+<section class="slide slide-statement" data-slide="5">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">周末京都：三天两夜精华路线</blockquote>
+            
+        </div>
+<div class="page-num">5 / 25</div>
+</section>
+<section class="slide slide-section" data-slide="6">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">经典必游</h2>
+            <p class="section-subtitle">01</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">6 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="7">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">经典必游一日安排</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">周六上午：伏见稻荷大社（千本鸟居）</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">下午：清水寺+二年坂</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">傍晚：祇园花见小路</span></li></ul>
+            <p class="body-text">将经典景点串联成高效的一日游，从早到晚体验京都精华。</p>
+        </div>
+<div class="page-num">7 / 25</div>
+</section>
+<section class="slide slide-big_number" data-slide="8">
+
+        <div class="big-number-content">
+            <div class="bn-number">2小时</div>
+            <h3 class="bn-label">高效游览伏见稻荷</h3>
+            <p class="bn-context">建议游览时间仅2小时，充分感受千本鸟居的震撼，高效不拖沓。</p>
+        </div>
+<div class="page-num">8 / 25</div>
+</section>
+<section class="slide slide-comparison" data-slide="9">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">经典与静谧之选</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>清水寺</h3>
+                    <ul><li>门票400日元</li>
+<li>经典地标，游客众多</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>知恩院</h3>
+                    <ul><li>免费入场</li>
+<li>人少清幽</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">9 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="10">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">祇园与先斗町晚餐</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">祇园：傍晚逛最好，偶遇艺伎概率高</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">晚餐推荐：先斗町小巷，人均2000日元</span></li></ul>
+            
+        </div>
+<div class="page-num">10 / 25</div>
+</section>
+<section class="slide slide-section" data-slide="11">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">02 小众秘境</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">11 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="12">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">周日行程：贵船与岚山</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">上午：贵船神社，流水面与川床</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">下午：岚山竹林，走小路避开人流</span></li></ul>
+            <p class="body-text">从自然景点过渡到特色体验，感受京都的别样魅力。</p>
+        </div>
+<div class="page-num">12 / 25</div>
+</section>
+<section class="slide slide-big_number" data-slide="13">
+
+        <div class="big-number-content">
+            <div class="bn-number">300日元</div>
+            <h3 class="bn-label">流水面体验</h3>
+            <p class="bn-context">仅需300日元，在贵船神社享用流水面，感受清凉与趣味，物超所值。</p>
+        </div>
+<div class="page-num">13 / 25</div>
+</section>
+<section class="slide slide-comparison" data-slide="14">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">岚山交通对比</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>岚山小火车</h3>
+                    <ul><li>拥挤如早高峰</li>
+<li>票价2000日元</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>徒步竹林+野宫神社</h3>
+                    <ul><li>清净自在</li>
+<li>免费入场</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">14 / 25</div>
+</section>
+<section class="slide slide-section" data-slide="15">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">美食与体验</h2>
+            <p class="section-subtitle">03</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">15 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="16">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">京都美食巡礼</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">早餐：京都特色京豆腐</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">午餐：锦市场小吃</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">下午茶：抹茶甜品</span></li></ul>
+            <p class="body-text">从清晨的京豆腐到锦市场的热闹小吃，再以抹茶甜品收尾，每一口都是京都的味道。</p>
+        </div>
+<div class="page-num">16 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="17">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">体验与预算控制</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">茶道体验：30分钟，2000日元</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">和服租赁：半天，3000日元</span></li></ul>
+            <p class="body-text">这些特色体验让旅程更难忘，但也要注意控制预算哦。</p>
+        </div>
+<div class="page-num">17 / 25</div>
+</section>
+<section class="slide slide-big_number" data-slide="18">
+
+        <div class="big-number-content">
+            <div class="bn-number">人均3000元</div>
+            <h3 class="bn-label">预算分配明细</h3>
+            <p class="bn-context">人均3000元预算，合理分配确保旅途无忧。</p>
+        </div>
+<div class="page-num">18 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="19">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">实用小贴士</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">早起避开人群，节省时间</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">公交一日券600日元，超划算</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">车站coin locker寄存行李</span></li></ul>
+            
+        </div>
+<div class="page-num">19 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="20">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">两天行程回顾</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">经典与小众景点兼顾，美食穿插其中</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">总花费可控，性价比高</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">第一次也能玩得尽兴</span></li></ul>
+            
+        </div>
+<div class="page-num">20 / 25</div>
+</section>
+<section class="slide slide-big_number" data-slide="21">
+
+        <div class="big-number-content">
+            <div class="bn-number">3个关键准备</div>
+            <h3 class="bn-label">行前准备</h3>
+            
+        </div>
+<div class="page-num">21 / 25</div>
+</section>
+<section class="slide slide-statement" data-slide="22">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">京都的周末，是一场浓缩的梦境。</blockquote>
+            
+        </div>
+<div class="page-num">22 / 25</div>
+</section>
+<section class="slide slide-end" data-slide="23">
+
+        <div class="end-content">
+            <h1 class="end-thanks">祝你旅途愉快！</h1>
+            <p class="end-contact">如有任何疑问，欢迎通过邮箱或社交媒体联系我。</p>
+            <div class="deco-circle c4"></div>
+            <div class="deco-circle c5"></div>
+        </div>
+
+</section>
+<section class="slide slide-bullets" data-slide="24">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">实用贴士</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">推荐住宿：京都站附近或四条河原町</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">推荐交通：ICOCA卡，方便快捷</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">必备物品：零钱包、舒适的鞋</span></li></ul>
+            
+        </div>
+<div class="page-num">24 / 25</div>
+</section>
+<section class="slide slide-bullets" data-slide="25">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">行前小贴士</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">语言：简单英语+翻译app</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">网络：租WiFi或买SIM卡</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">礼仪：脱鞋、安静</span></li></ul>
+            
+        </div>
+<div class="page-num">25 / 25</div>
+</section>
+
+<div class="nav-hint">↑ ↓ 翻页 &nbsp;|&nbsp; 点击两侧区域翻页</div>
+
+<script>
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    const h = window.innerHeight;
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.scrollBy({ top: h, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        window.scrollBy({ top: -h, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+        e.preventDefault();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+});
+
+// Click sides to navigate
+document.addEventListener('click', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    // Only trigger on side areas (left/right 15%), not center
+    if (y > 0.2 && y < 0.8) {
+        if (x < 0.15) {
+            window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+        } else if (x > 0.85) {
+            window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+        }
+    }
+});
+
+// Hide nav hint after 5s
+setTimeout(() => {
+    document.querySelector('.nav-hint').style.opacity = '0';
+}, 5000);
+</script>
+</body>
+</html>

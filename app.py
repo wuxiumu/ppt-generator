@@ -153,6 +153,30 @@ def index():
     return send_from_directory(".", "admin.html")
 
 
+@app.route("/share/<pid>/<filename>")
+def share_output(pid, filename):
+    """Clean URL for sharing presentations."""
+    out_dir = PROJECTS_DIR / pid / "output"
+    if not (out_dir / filename).exists():
+        return "File not found", 404
+    return send_from_directory(str(out_dir), filename)
+
+
+@app.route("/api/share-info")
+def api_share_info():
+    """Return local network IP and port for QR code."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        ip = "127.0.0.1"
+    port = request.environ.get("SERVER_PORT", "8080")
+    return jsonify({"ip": ip, "port": port, "base_url": f"http://{ip}:{port}"})
+
+
 @app.route("/api/projects", methods=["GET"])
 def api_list_projects():
     return jsonify(list_projects())

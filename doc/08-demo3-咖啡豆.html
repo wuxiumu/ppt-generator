@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>如何挑选一款适合自己的咖啡豆</title>
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #FFF8F0;
+    --surface: #FFF0E0;
+    --text: #2D1B00;
+    --text2: #6B4E37;
+    --text3: #A08B7A;
+    --accent1: #C67B5C;
+    --accent2: #E87461;
+    --accent3: #4A7C59;
+    --accent4: #F4C542;
+    --on-accent: #FFFFFF;
+    --divider: #E8D5C4;
+    --code-bg: #2D1B00;
+    --grad1: linear-gradient(135deg, #C67B5C 0%, #F4C542 100%);
+    --grad2: linear-gradient(135deg, #E87461 0%, #C67B5C 100%);
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
+}
+
+body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+/* ── Slide Base ───────────────────────────────── */
+.slide {
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6vh 8vw;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.slide > div:first-child {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-num {
+    position: absolute;
+    bottom: 3vh;
+    right: 4vw;
+    font-size: clamp(10px, 1.2vh, 14px);
+    color: var(--text3);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Title Slide ──────────────────────────────── */
+.slide-title {
+    background: var(--bg);
+    position: relative;
+}
+.title-content {
+    position: relative;
+    z-index: 1;
+}
+.title-content .accent-bar {
+    width: 4px;
+    height: 80px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 2.5vh;
+}
+.title-text {
+    font-size: clamp(28px, 5vh, 56px);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 2vh;
+    letter-spacing: -0.02em;
+}
+.subtitle-text {
+    font-size: clamp(16px, 2.5vh, 26px);
+    color: var(--text2);
+    font-weight: 400;
+    line-height: 1.5;
+}
+.deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.title-content .c1 {
+    width: 220px; height: 220px;
+    background: var(--accent1);
+    right: -40px; bottom: -30px;
+}
+.title-content .c2 {
+    width: 140px; height: 140px;
+    background: var(--accent2);
+    right: 60px; bottom: 80px;
+}
+
+/* ── Section Slide ────────────────────────────── */
+.slide-section {
+    background: var(--grad1);
+}
+.section-content {
+    color: var(--on-accent);
+    position: relative;
+}
+.section-number {
+    font-size: clamp(60px, 12vh, 120px);
+    font-weight: 900;
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 1vh;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.section-title {
+    font-size: clamp(24px, 4.5vh, 48px);
+    font-weight: 700;
+    margin-bottom: 1.5vh;
+}
+.section-subtitle {
+    font-size: clamp(14px, 2vh, 22px);
+    opacity: 0.8;
+}
+.section-content .c3 {
+    width: 300px; height: 300px;
+    background: var(--accent2);
+    right: -80px; top: -60px;
+    opacity: 0.08;
+}
+
+/* ── Bullets Slide ────────────────────────────── */
+.bullets-content {
+    position: relative;
+}
+.bullets-content .accent-bar {
+    width: 4px;
+    height: 36px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 1.5vh;
+}
+.slide-title {
+    font-size: clamp(20px, 3.5vh, 36px);
+    font-weight: 700;
+    margin-bottom: 3vh;
+    color: var(--text);
+}
+.bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8vh;
+}
+.bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: clamp(14px, 2.2vh, 22px);
+    line-height: 1.6;
+    color: var(--text);
+}
+.bullet-dot {
+    flex-shrink: 0;
+    width: 8px; height: 8px;
+    background: var(--accent1);
+    border-radius: 50%;
+    margin-top: 0.6em;
+}
+.body-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    line-height: 1.7;
+}
+
+/* ── Statement Slide ──────────────────────────── */
+.slide-statement {
+    background: var(--bg);
+}
+.statement-content {
+    text-align: center;
+    max-width: 85%;
+    margin: 0 auto;
+}
+.quote-mark {
+    font-size: clamp(50px, 10vh, 100px);
+    color: var(--accent1);
+    opacity: 0.3;
+    line-height: 0.5;
+    font-family: Georgia, serif;
+    margin-bottom: 2vh;
+}
+.statement-text {
+    font-size: clamp(20px, 3.5vh, 38px);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text);
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.attr-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text3);
+    font-style: italic;
+}
+
+/* ── Comparison Slide ─────────────────────────── */
+.comparison-content .slide-title {
+    margin-bottom: 3vh;
+}
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0 3vw;
+    align-items: start;
+}
+.compare-divider {
+    background: var(--divider);
+    height: 100%;
+    min-height: 200px;
+    border-radius: 1px;
+}
+.compare-col h3 {
+    font-size: clamp(16px, 2.3vh, 24px);
+    font-weight: 700;
+    margin-bottom: 2vh;
+    padding-bottom: 1vh;
+}
+.col-left h3 { color: var(--accent1); border-bottom: 2px solid var(--accent1); }
+.col-right h3 { color: var(--accent2); border-bottom: 2px solid var(--accent2); }
+.compare-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+}
+.compare-col li {
+    font-size: clamp(13px, 1.9vh, 19px);
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 16px;
+    position: relative;
+}
+.compare-col li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 0.4em;
+}
+.col-left li::before { color: var(--accent1); }
+.col-right li::before { color: var(--accent2); }
+
+/* ── Big Number Slide ─────────────────────────── */
+.big-number-content {
+    text-align: center;
+}
+.bn-number {
+    font-size: clamp(60px, 14vh, 140px);
+    font-weight: 900;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.bn-label {
+    font-size: clamp(18px, 2.8vh, 30px);
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2vh;
+}
+.bn-context {
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    margin-top: 1.5vh;
+}
+
+/* ── Code Slide ───────────────────────────────── */
+.code-content .slide-title {
+    margin-bottom: 2.5vh;
+}
+.code-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3vw;
+    align-items: start;
+}
+.code-block {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 2.5vh 2vw;
+    overflow-x: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+.code-block code {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: clamp(11px, 1.5vh, 16px);
+    line-height: 1.7;
+    color: #D4D4D4;
+    white-space: pre;
+}
+.code-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    padding-top: 1vh;
+}
+.note-item {
+    font-size: clamp(12px, 1.7vh, 17px);
+    color: var(--text2);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+}
+.note-arrow {
+    color: var(--accent1);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── End Slide ────────────────────────────────── */
+.slide-end {
+    background: var(--grad1);
+}
+.end-content {
+    text-align: center;
+    color: var(--on-accent);
+    position: relative;
+}
+.end-thanks {
+    font-size: clamp(32px, 6vh, 64px);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.end-contact {
+    margin-top: 3vh;
+    font-size: clamp(14px, 2vh, 20px);
+    opacity: 0.85;
+}
+.end-content .c4 {
+    width: 160px; height: 160px;
+    background: var(--accent2);
+    left: -40px; top: -30px;
+    opacity: 0.1;
+}
+.end-content .c5 {
+    width: 120px; height: 120px;
+    background: var(--accent2);
+    right: -20px; bottom: -20px;
+    opacity: 0.1;
+}
+
+/* ── Navigation hint ──────────────────────────── */
+.nav-hint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: var(--text3);
+    opacity: 0.6;
+    z-index: 100;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+</style>
+</head>
+<body>
+
+<section class="slide slide-title" data-slide="1">
+
+        <div class="title-content">
+            <div class="accent-bar"></div>
+            <h1 class="title-text">如何挑选一款适合自己的咖啡豆</h1>
+            <p class="subtitle-text">从烘焙度到风味，找到你的那杯咖啡</p>
+            <div class="deco-circle c1"></div>
+            <div class="deco-circle c2"></div>
+        </div>
+
+</section>
+<section class="slide slide-statement" data-slide="2">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">你买咖啡豆时，是不是只看包装上的“醇厚”和“果香”？实际上，90%的新手都选错了。</blockquote>
+            
+        </div>
+<div class="page-num">2 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="3">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">这些坑，你踩过几个？</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">买回来的豆子喝起来又酸又苦</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">不知道深烘浅烘有什么区别</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">被各种产地和风味描述搞晕</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">想找到一款真正适合自己的豆子</span></li></ul>
+            
+        </div>
+<div class="page-num">3 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="4">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">探索咖啡的四个维度</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">烘焙度——决定咖啡性格</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">产地——风土的味道</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">处理法——风味的魔术</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">决策框架——三步选豆法</span></li></ul>
+            
+        </div>
+<div class="page-num">4 / 26</div>
+</section>
+<section class="slide slide-section" data-slide="5">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">烘焙度——咖啡豆的“性格”</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">5 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="6">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">烘焙度对比</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">浅烘：酸度高、花香果香明显，适合手冲</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">中烘：酸甜平衡，美式或拿铁都行</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">深烘：苦味重、醇厚，适合意式浓缩</span></li></ul>
+            
+        </div>
+<div class="page-num">6 / 26</div>
+</section>
+<section class="slide slide-comparison" data-slide="7">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">烘焙度对比</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>浅烘</h3>
+                    <ul><li>酸度强</li>
+<li>口感轻</li>
+<li>风味复杂</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>深烘</h3>
+                    <ul><li>苦度高</li>
+<li>口感厚重</li>
+<li>风味单一</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">7 / 26</div>
+</section>
+<section class="slide slide-big_number" data-slide="8">
+
+        <div class="big-number-content">
+            <div class="bn-number">酸度3倍 vs 苦味+50%</div>
+            <h3 class="bn-label">烘焙度与风味</h3>
+            <p class="bn-context">浅烘豆酸度是深烘的3倍，而深烘豆苦味物质增加50%。烘焙度决定风味的平衡。</p>
+        </div>
+<div class="page-num">8 / 26</div>
+</section>
+<section class="slide slide-section" data-slide="9">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">产地——风土的味道</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">9 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="10">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">产地风味对比</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">非洲（埃塞俄比亚、肯尼亚）：花香、果酸</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">中南美洲（哥伦比亚、巴西）：坚果、巧克力</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">亚洲（印度尼西亚、云南）：草本、香料</span></li></ul>
+            
+        </div>
+<div class="page-num">10 / 26</div>
+</section>
+<section class="slide slide-comparison" data-slide="11">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">产地对比：非洲 vs 亚洲</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>非洲豆</h3>
+                    <ul><li>酸度明亮</li>
+<li>复杂度高</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>亚洲豆</h3>
+                    <ul><li>醇厚低沉</li>
+<li>香料感</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">11 / 26</div>
+</section>
+<section class="slide slide-big_number" data-slide="12">
+
+        <div class="big-number-content">
+            <div class="bn-number">70%</div>
+            <h3 class="bn-label">产地细节</h3>
+            
+        </div>
+<div class="page-num">12 / 26</div>
+</section>
+<section class="slide slide-section" data-slide="13">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">处理法——风味的魔术</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">13 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="14">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">处理法对比：日晒与水洗</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">日晒：果肉发酵，甜感高，酒香</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">水洗：干净明亮，酸度最突出</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">蜜处理：介于两者之间，甜酸平衡</span></li></ul>
+            
+        </div>
+<div class="page-num">14 / 26</div>
+</section>
+<section class="slide slide-comparison" data-slide="15">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">处理法对比</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>日晒</h3>
+                    <ul><li>甜度高</li>
+<li>醇厚</li>
+<li>风味狂野</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>水洗</h3>
+                    <ul><li>酸度亮</li>
+<li>干净</li>
+<li>风味清晰</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">15 / 26</div>
+</section>
+<section class="slide slide-big_number" data-slide="16">
+
+        <div class="big-number-content">
+            <div class="bn-number">日晒30% vs 水洗60%</div>
+            <h3 class="bn-label">处理法格局</h3>
+            <p class="bn-context">日晒处理法占全球产量约30%，水洗占60%。两者主导了咖啡风味的基本轮廓。</p>
+        </div>
+<div class="page-num">16 / 26</div>
+</section>
+<section class="slide slide-section" data-slide="17">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">三步选豆法——找到你的豆</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">17 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="18">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">三步选豆法——第一步</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">确定偏好：喜欢酸还是苦？</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">根据偏好选烘焙度：喜酸选浅烘，喜苦选深烘，不确定选中烘</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">试喝确认，调整下次选择</span></li></ul>
+            
+        </div>
+<div class="page-num">18 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="19">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">第二步：选产地</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">喜欢水果酸质 → 非洲豆</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">喜欢坚果巧克力 → 中南美洲</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">喜欢醇厚香料 → 亚洲豆</span></li></ul>
+            <p class="body-text">根据风味偏好，缩小产地范围。</p>
+        </div>
+<div class="page-num">19 / 26</div>
+</section>
+<section class="slide slide-big_number" data-slide="20">
+
+        <div class="big-number-content">
+            <div class="bn-number">喜欢干净酸度 → 水洗；喜欢甜感 → 日晒；想要平衡 → 蜜处理</div>
+            <h3 class="bn-label">决策树：处理法</h3>
+            
+        </div>
+<div class="page-num">20 / 26</div>
+</section>
+<section class="slide slide-statement" data-slide="21">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">三步走：烘焙度 → 产地 → 处理法，轻松找到你的咖啡豆。</blockquote>
+            
+        </div>
+<div class="page-num">21 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="22">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">实例：果酸咖啡选择</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">假设你想喝一杯果酸明显的咖啡</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">选浅烘</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">选埃塞俄比亚</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">选水洗处理法</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">推荐：埃塞俄比亚 耶加雪菲 水洗 浅烘</span></li></ul>
+            
+        </div>
+<div class="page-num">22 / 26</div>
+</section>
+<section class="slide slide-bullets" data-slide="23">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">三步框架：选豆不再难</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">烘焙度决定性格</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">产地带来风土</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">处理法塑造风味</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">三步框架让你不再迷茫</span></li></ul>
+            
+        </div>
+<div class="page-num">23 / 26</div>
+</section>
+<section class="slide slide-big_number" data-slide="24">
+
+        <div class="big-number-content">
+            <div class="bn-number">4步</div>
+            <h3 class="bn-label">选豆四步法</h3>
+            
+        </div>
+<div class="page-num">24 / 26</div>
+</section>
+<section class="slide slide-statement" data-slide="25">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">一杯好咖啡，不是最贵的，而是最适合你的。</blockquote>
+            
+        </div>
+<div class="page-num">25 / 26</div>
+</section>
+<section class="slide slide-end" data-slide="26">
+
+        <div class="end-content">
+            <h1 class="end-thanks">感谢聆听</h1>
+            <p class="end-contact">如有任何问题或合作意向，欢迎通过以下方式联系。期待与您交流。</p>
+            <div class="deco-circle c4"></div>
+            <div class="deco-circle c5"></div>
+        </div>
+
+</section>
+
+<div class="nav-hint">↑ ↓ 翻页 &nbsp;|&nbsp; 点击两侧区域翻页</div>
+
+<script>
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    const h = window.innerHeight;
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.scrollBy({ top: h, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        window.scrollBy({ top: -h, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+        e.preventDefault();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+});
+
+// Click sides to navigate
+document.addEventListener('click', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    // Only trigger on side areas (left/right 15%), not center
+    if (y > 0.2 && y < 0.8) {
+        if (x < 0.15) {
+            window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+        } else if (x > 0.85) {
+            window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+        }
+    }
+});
+
+// Hide nav hint after 5s
+setTimeout(() => {
+    document.querySelector('.nav-hint').style.opacity = '0';
+}, 5000);
+</script>
+</body>
+</html>

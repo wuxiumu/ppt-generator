@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>给老板讲清楚为什么我们应该用 Rust 重写订单系统</title>
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #FFFFFF;
+    --surface: #F7FAFC;
+    --text: #1A202C;
+    --text2: #4A5568;
+    --text3: #A0AEC0;
+    --accent1: #2B6CB0;
+    --accent2: #ED8936;
+    --accent3: #38A169;
+    --accent4: #E53E3E;
+    --on-accent: #FFFFFF;
+    --divider: #E2E8F0;
+    --code-bg: #1A202C;
+    --grad1: linear-gradient(135deg, #2B6CB0 0%, #38A169 100%);
+    --grad2: linear-gradient(135deg, #2B6CB0 0%, #ED8936 100%);
+}
+
+html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
+}
+
+body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+/* ── Slide Base ───────────────────────────────── */
+.slide {
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6vh 8vw;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.slide > div:first-child {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-num {
+    position: absolute;
+    bottom: 3vh;
+    right: 4vw;
+    font-size: clamp(10px, 1.2vh, 14px);
+    color: var(--text3);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Title Slide ──────────────────────────────── */
+.slide-title {
+    background: var(--bg);
+    position: relative;
+}
+.title-content {
+    position: relative;
+    z-index: 1;
+}
+.title-content .accent-bar {
+    width: 4px;
+    height: 80px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 2.5vh;
+}
+.title-text {
+    font-size: clamp(28px, 5vh, 56px);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 2vh;
+    letter-spacing: -0.02em;
+}
+.subtitle-text {
+    font-size: clamp(16px, 2.5vh, 26px);
+    color: var(--text2);
+    font-weight: 400;
+    line-height: 1.5;
+}
+.deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.title-content .c1 {
+    width: 220px; height: 220px;
+    background: var(--accent1);
+    right: -40px; bottom: -30px;
+}
+.title-content .c2 {
+    width: 140px; height: 140px;
+    background: var(--accent2);
+    right: 60px; bottom: 80px;
+}
+
+/* ── Section Slide ────────────────────────────── */
+.slide-section {
+    background: var(--grad1);
+}
+.section-content {
+    color: var(--on-accent);
+    position: relative;
+}
+.section-number {
+    font-size: clamp(60px, 12vh, 120px);
+    font-weight: 900;
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 1vh;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.section-title {
+    font-size: clamp(24px, 4.5vh, 48px);
+    font-weight: 700;
+    margin-bottom: 1.5vh;
+}
+.section-subtitle {
+    font-size: clamp(14px, 2vh, 22px);
+    opacity: 0.8;
+}
+.section-content .c3 {
+    width: 300px; height: 300px;
+    background: var(--accent2);
+    right: -80px; top: -60px;
+    opacity: 0.08;
+}
+
+/* ── Bullets Slide ────────────────────────────── */
+.bullets-content {
+    position: relative;
+}
+.bullets-content .accent-bar {
+    width: 4px;
+    height: 36px;
+    background: var(--accent1);
+    border-radius: 2px;
+    margin-bottom: 1.5vh;
+}
+.slide-title {
+    font-size: clamp(20px, 3.5vh, 36px);
+    font-weight: 700;
+    margin-bottom: 3vh;
+    color: var(--text);
+}
+.bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8vh;
+}
+.bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: clamp(14px, 2.2vh, 22px);
+    line-height: 1.6;
+    color: var(--text);
+}
+.bullet-dot {
+    flex-shrink: 0;
+    width: 8px; height: 8px;
+    background: var(--accent1);
+    border-radius: 50%;
+    margin-top: 0.6em;
+}
+.body-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    line-height: 1.7;
+}
+
+/* ── Statement Slide ──────────────────────────── */
+.slide-statement {
+    background: var(--bg);
+}
+.statement-content {
+    text-align: center;
+    max-width: 85%;
+    margin: 0 auto;
+}
+.quote-mark {
+    font-size: clamp(50px, 10vh, 100px);
+    color: var(--accent1);
+    opacity: 0.3;
+    line-height: 0.5;
+    font-family: Georgia, serif;
+    margin-bottom: 2vh;
+}
+.statement-text {
+    font-size: clamp(20px, 3.5vh, 38px);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text);
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.attr-text {
+    margin-top: 3vh;
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text3);
+    font-style: italic;
+}
+
+/* ── Comparison Slide ─────────────────────────── */
+.comparison-content .slide-title {
+    margin-bottom: 3vh;
+}
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0 3vw;
+    align-items: start;
+}
+.compare-divider {
+    background: var(--divider);
+    height: 100%;
+    min-height: 200px;
+    border-radius: 1px;
+}
+.compare-col h3 {
+    font-size: clamp(16px, 2.3vh, 24px);
+    font-weight: 700;
+    margin-bottom: 2vh;
+    padding-bottom: 1vh;
+}
+.col-left h3 { color: var(--accent1); border-bottom: 2px solid var(--accent1); }
+.col-right h3 { color: var(--accent2); border-bottom: 2px solid var(--accent2); }
+.compare-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+}
+.compare-col li {
+    font-size: clamp(13px, 1.9vh, 19px);
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 16px;
+    position: relative;
+}
+.compare-col li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 0.4em;
+}
+.col-left li::before { color: var(--accent1); }
+.col-right li::before { color: var(--accent2); }
+
+/* ── Big Number Slide ─────────────────────────── */
+.big-number-content {
+    text-align: center;
+}
+.bn-number {
+    font-size: clamp(60px, 14vh, 140px);
+    font-weight: 900;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    font-family: "Impact", "Arial Black", sans-serif;
+}
+.bn-label {
+    font-size: clamp(18px, 2.8vh, 30px);
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2vh;
+}
+.bn-context {
+    font-size: clamp(13px, 1.8vh, 18px);
+    color: var(--text2);
+    margin-top: 1.5vh;
+}
+
+/* ── Code Slide ───────────────────────────────── */
+.code-content .slide-title {
+    margin-bottom: 2.5vh;
+}
+.code-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3vw;
+    align-items: start;
+}
+.code-block {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 2.5vh 2vw;
+    overflow-x: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+.code-block code {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: clamp(11px, 1.5vh, 16px);
+    line-height: 1.7;
+    color: #D4D4D4;
+    white-space: pre;
+}
+.code-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    padding-top: 1vh;
+}
+.note-item {
+    font-size: clamp(12px, 1.7vh, 17px);
+    color: var(--text2);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+}
+.note-arrow {
+    color: var(--accent1);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── End Slide ────────────────────────────────── */
+.slide-end {
+    background: var(--grad1);
+}
+.end-content {
+    text-align: center;
+    color: var(--on-accent);
+    position: relative;
+}
+.end-thanks {
+    font-size: clamp(32px, 6vh, 64px);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.end-contact {
+    margin-top: 3vh;
+    font-size: clamp(14px, 2vh, 20px);
+    opacity: 0.85;
+}
+.end-content .c4 {
+    width: 160px; height: 160px;
+    background: var(--accent2);
+    left: -40px; top: -30px;
+    opacity: 0.1;
+}
+.end-content .c5 {
+    width: 120px; height: 120px;
+    background: var(--accent2);
+    right: -20px; bottom: -20px;
+    opacity: 0.1;
+}
+
+/* ── Navigation hint ──────────────────────────── */
+.nav-hint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: var(--text3);
+    opacity: 0.6;
+    z-index: 100;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+</style>
+</head>
+<body>
+
+<section class="slide slide-title" data-slide="1">
+
+        <div class="title-content">
+            <div class="accent-bar"></div>
+            <h1 class="title-text">用Rust重写订单系统</h1>
+            <p class="subtitle-text">给CEO的技术投资决策参考</p>
+            <div class="deco-circle c1"></div>
+            <div class="deco-circle c2"></div>
+        </div>
+
+</section>
+<section class="slide slide-statement" data-slide="2">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">每次大促，我们都在“用纸糊的船运黄金”</blockquote>
+            
+        </div>
+<div class="page-num">2 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="3">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">三大痛点，亟需破局</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">大促期间下单失败率高达30%，用户投诉激增</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">每次大促需投入大量人力临时扩容和修复</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">团队疲于救火，无法做有价值的创新</span></li></ul>
+            <p class="body-text">这些痛点不仅影响营收，更消耗团队精力。我们需要一个根本性的解决方案。</p>
+        </div>
+<div class="page-num">3 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="4">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">今天汇报的三个部分</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">1. 问题根源——为什么Python扛不住</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">2. Rust如何一劳永逸解决</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">3. 实施路径与ROI</span></li></ul>
+            <p class="body-text">进入主体第一章</p>
+        </div>
+<div class="page-num">4 / 27</div>
+</section>
+<section class="slide slide-section" data-slide="5">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">第一章 问题根源</h2>
+            <p class="section-subtitle">为什么Python扛不住？</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">5 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="6">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">Python的瓶颈</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">GIL限制多核利用</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">动态类型导致运行时开销</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">垃圾回收引发不可控停顿</span></li></ul>
+            <p class="body-text">同等硬件下，Rust的吞吐量是Python的5-10倍。</p>
+        </div>
+<div class="page-num">6 / 27</div>
+</section>
+<section class="slide slide-big_number" data-slide="7">
+
+        <div class="big-number-content">
+            <div class="bn-number">每次损失约X万元</div>
+            <h3 class="bn-label">大促超时成本</h3>
+            
+        </div>
+<div class="page-num">7 / 27</div>
+</section>
+<section class="slide slide-comparison" data-slide="8">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">技术对比：Python vs Rust</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>Python</h3>
+                    <ul><li>动态类型，运行时错误多</li>
+<li>GIL限制并发性能</li>
+<li>垃圾回收影响延迟</li>
+<li>运行时开销大</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>Rust</h3>
+                    <ul><li>静态类型，编译期查错</li>
+<li>无GC，内存安全</li>
+<li>零成本抽象</li>
+<li>并发与性能完胜</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">8 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="9">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">Rust的核心优势</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">内存安全：编译时消除空指针和数据竞争</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">高性能：与C/C++相当，无运行时开销</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">并发安全：所有权模型保证线程安全</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">生态成熟：Web框架、数据库驱动齐全</span></li></ul>
+            
+        </div>
+<div class="page-num">9 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="10">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">行业案例：Rust重写核心系统</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">Dropbox：存储引擎性能提升10倍</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">Figma：渲染引擎响应速度提升4倍</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">Discord：读服务延迟降低5倍</span></li></ul>
+            
+        </div>
+<div class="page-num">10 / 27</div>
+</section>
+<section class="slide slide-section" data-slide="11">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">第二章 实施路径</h2>
+            <p class="section-subtitle">分阶段重写策略</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">11 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="12">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">分阶段重写策略</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">第一阶段：核心链路用Rust重写，Python API不变</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">第二阶段：逐步迁移周边服务</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">第三阶段：完全替换Python，下线旧系统</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">全程灰度发布，风险可控</span></li></ul>
+            <p class="body-text">强调团队技术储备，确保平稳过渡</p>
+        </div>
+<div class="page-num">12 / 27</div>
+</section>
+<section class="slide slide-comparison" data-slide="13">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">团队与时间线规划</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>当前团队</h3>
+                    <ul><li>4人Python团队</li>
+<li>学习Rust需1个月</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>计划</h3>
+                    <ul><li>3个月完成核心重写</li>
+<li>6个月全量迁移</li>
+<li>内部培养+外部招聘1名Rust专家</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">13 / 27</div>
+</section>
+<section class="slide slide-big_number" data-slide="14">
+
+        <div class="big-number-content">
+            <div class="bn-number">投资回报率Z%</div>
+            <h3 class="bn-label">投资回报分析</h3>
+            
+        </div>
+<div class="page-num">14 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="15">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">长期收益：不止于节省</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">系统稳定性：大促零超时目标</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">开发效率：Rust静态类型减少生产Bug</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">技术品牌：吸引高端人才</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">可扩展性：支撑未来业务增长</span></li></ul>
+            
+        </div>
+<div class="page-num">15 / 27</div>
+</section>
+<section class="slide slide-section" data-slide="16">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">03 风险与应对</h2>
+            <p class="section-subtitle"></p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">16 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="17">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">主要风险</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">学习曲线：团队需时间掌握Rust</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">生态成熟度：部分库不如Python丰富</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">迁移期间双系统维护成本高</span></li></ul>
+            
+        </div>
+<div class="page-num">17 / 27</div>
+</section>
+<section class="slide slide-comparison" data-slide="18">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">风险应对方案</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>风险</h3>
+                    <ul><li>学习曲线</li>
+<li>生态不足</li>
+<li>双系统维护</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>对策</h3>
+                    <ul><li>集中培训+导师制+内部文档</li>
+<li>优先选择成熟库，必要时自研</li>
+<li>严格灰度，快速切换</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">18 / 27</div>
+</section>
+<section class="slide slide-big_number" data-slide="19">
+
+        <div class="big-number-content">
+            <div class="bn-number">90%成功率</div>
+            <h3 class="bn-label">迁移成功率</h3>
+            <p class="bn-context">基于行业经验，预计迁移失败概率低于10%，成功率可达90%以上。</p>
+        </div>
+<div class="page-num">19 / 27</div>
+</section>
+<section class="slide slide-section" data-slide="20">
+
+        <div class="section-content">
+            <div class="section-number">02</div>
+            <h2 class="section-title">第四章 未来展望</h2>
+            <p class="section-subtitle">重写后的美好场景</p>
+            <div class="deco-circle c3"></div>
+        </div>
+<div class="page-num">20 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="21">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">重写后的系统架构</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">Rust核心服务：高并发、低延迟、内存安全</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">与Python服务通过gRPC通信</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">可水平扩展，应对未来5年业务增长</span></li></ul>
+            
+        </div>
+<div class="page-num">21 / 27</div>
+</section>
+<section class="slide slide-comparison" data-slide="22">
+
+        <div class="comparison-content">
+            <h2 class="slide-title">性能提升预期</h2>
+            <div class="compare-grid">
+                <div class="compare-col col-left">
+                    <h3>当前 Python</h3>
+                    <ul><li>峰值 TPS: 1,000</li>
+<li>P99 延迟: 200ms</li></ul>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="compare-col col-right">
+                    <h3>Rust 服务</h3>
+                    <ul><li>峰值 TPS: 10,000</li>
+<li>P99 延迟: 20ms</li></ul>
+                </div>
+            </div>
+        </div>
+<div class="page-num">22 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="23">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">Rust 迁移的业务价值</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">大促零掉单，营收有保障</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">用户下单体验顺畅，提升转化率</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">团队从救火转向创新，加速业务迭代</span></li></ul>
+            
+        </div>
+<div class="page-num">23 / 27</div>
+</section>
+<section class="slide slide-bullets" data-slide="24">
+
+        <div class="bullets-content">
+            <div class="accent-bar"></div>
+            <h2 class="slide-title">现在，就是行动的时刻</h2>
+            <ul class="bullet-list"><li><span class="bullet-dot"></span><span class="bullet-text">Python性能瓶颈正在造成实际损失</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">Rust是经过验证的成熟解决方案</span></li>
+<li><span class="bullet-dot"></span><span class="bullet-text">我们有清晰的实施路径和风险应对方案</span></li></ul>
+            
+        </div>
+<div class="page-num">24 / 27</div>
+</section>
+<section class="slide slide-big_number" data-slide="25">
+
+        <div class="big-number-content">
+            <div class="bn-number">今日启动，明日无忧</div>
+            <h3 class="bn-label">下一步行动</h3>
+            
+        </div>
+<div class="page-num">25 / 27</div>
+</section>
+<section class="slide slide-statement" data-slide="26">
+
+        <div class="statement-content">
+            <div class="quote-mark">“</div>
+            <blockquote class="statement-text">不要等船沉了才换船</blockquote>
+            <p class="attr-text">— 今天用Rust重写，明天大促无忧</p>
+        </div>
+<div class="page-num">26 / 27</div>
+</section>
+<section class="slide slide-end" data-slide="27">
+
+        <div class="end-content">
+            <h1 class="end-thanks">感谢聆听</h1>
+            
+            <div class="deco-circle c4"></div>
+            <div class="deco-circle c5"></div>
+        </div>
+
+</section>
+
+<div class="nav-hint">↑ ↓ 翻页 &nbsp;|&nbsp; 点击两侧区域翻页</div>
+
+<script>
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    const h = window.innerHeight;
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.scrollBy({ top: h, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        window.scrollBy({ top: -h, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+        e.preventDefault();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+});
+
+// Click sides to navigate
+document.addEventListener('click', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    // Only trigger on side areas (left/right 15%), not center
+    if (y > 0.2 && y < 0.8) {
+        if (x < 0.15) {
+            window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+        } else if (x > 0.85) {
+            window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+        }
+    }
+});
+
+// Hide nav hint after 5s
+setTimeout(() => {
+    document.querySelector('.nav-hint').style.opacity = '0';
+}, 5000);
+</script>
+</body>
+</html>
