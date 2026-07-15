@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 亲子漫画生成器</title>
+  <title>AI Generator — 漫画管理后台</title>
   <link rel="stylesheet" href="/comic-admin/css/style.css">
 </head>
 <body>
@@ -11,8 +11,8 @@
 <!-- Login Overlay -->
 <div id="loginOverlay" class="login-overlay">
   <div class="login-card">
-    <h1>AI 亲子漫画</h1>
-    <p class="login-sub">登录以管理漫画项目</p>
+    <h1>AI Generator</h1>
+    <p class="login-sub">漫画生成管理后台</p>
     <form id="loginForm">
       <div class="field">
         <label>用户名</label>
@@ -43,7 +43,7 @@
     <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
       <span></span><span></span><span></span>
     </button>
-    <span class="mobile-title" id="mobileTitle">AI 亲子漫画</span>
+    <span class="mobile-title" id="mobileTitle">AI Generator</span>
     <button class="mobile-logout" onclick="logout()">退出</button>
   </div>
 
@@ -53,13 +53,22 @@
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <h1>AI 亲子漫画</h1>
-      <p>故事漫画生成器</p>
+      <h1>AI Generator</h1>
+      <p>内容生成管理后台</p>
+    </div>
+    <div class="mode-switcher" id="modeSwitcher">
+      <a href="/" class="mode-item" data-mode="ppt">
+        <span class="mode-icon">📊</span>
+        <span class="mode-label">PPT 生成器</span>
+      </a>
+      <a href="/comic" class="mode-item active" data-mode="comic">
+        <span class="mode-icon">📖</span>
+        <span class="mode-label">漫画生成器</span>
+      </a>
     </div>
     <button class="btn-new" onclick="createComic()">+ 新建漫画</button>
     <div class="project-list" id="comicList"></div>
     <div class="sidebar-footer">
-      <a href="/" class="btn-switch">切换到 PPT</a>
       <button class="btn-logout-desktop" onclick="logout()">退出登录</button>
     </div>
   </aside>

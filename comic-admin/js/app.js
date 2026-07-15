@@ -1,5 +1,5 @@
 // ── State ────────────────────────────────────────────
-let authToken = sessionStorage.getItem('authToken') || '';
+let authToken = sessionStorage.getItem('admin_token') || '';
 let currentComicId = null;
 let currentComic = null;
 let templates = {};
@@ -52,7 +52,7 @@ async function handleLogin(e) {
     return;
   }
   authToken = data.token;
-  sessionStorage.setItem('authToken', authToken);
+  sessionStorage.setItem('admin_token', authToken);
   showApp();
 }
 
@@ -68,7 +68,7 @@ async function checkAuth() {
 
 function showLogin() {
   authToken = '';
-  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('admin_token');
   document.getElementById('loginOverlay').style.display = 'flex';
   document.getElementById('appContainer').style.display = 'none';
   refreshCaptcha();

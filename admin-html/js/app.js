@@ -10,17 +10,17 @@ let captchaId = null;  // Current captcha ID
 
 // ── Auth ─────────────────────────────────────────
 function loadToken() {
-  try { authToken = sessionStorage.getItem('ppt_token') || null; } catch(e) {}
+  try { authToken = sessionStorage.getItem('admin_token') || null; } catch(e) {}
 }
 
 function saveToken(token) {
   authToken = token;
-  try { sessionStorage.setItem('ppt_token', token); } catch(e) {}
+  try { sessionStorage.setItem('admin_token', token); } catch(e) {}
 }
 
 function clearToken() {
   authToken = null;
-  try { sessionStorage.removeItem('ppt_token'); } catch(e) {}
+  try { sessionStorage.removeItem('admin_token'); } catch(e) {}
 }
 
 async function refreshCaptcha() {
