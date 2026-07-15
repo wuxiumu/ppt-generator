@@ -5,6 +5,131 @@ let selectedSlideIndex = null;
 let allProjects = [];
 let editingSlideIndex = null;
 let editingSlideData = null;
+let authToken = null;  // Session token
+let captchaId = null;  // Current captcha ID
+
+// ── Auth ─────────────────────────────────────────
+function loadToken() {
+  try { authToken = sessionStorage.getItem('ppt_token') || null; } catch(e) {}
+}
+
+function saveToken(token) {
+  authToken = token;
+  try { sessionStorage.setItem('ppt_token', token); } catch(e) {}
+}
+
+function clearToken() {
+  authToken = null;
+  try { sessionStorage.removeItem('ppt_token'); } catch(e) {}
+}
+
+async function refreshCaptcha() {
+  try {
+    const res = await fetch('/api/captcha');
+    const data = await res.json();
+    captchaId = data.captcha_id;
+    const img = document.getElementById('captchaImg');
+    if (img) {
+      const b64 = res.headers.get('X-Captcha-Image');
+      img.src = 'data:image/png;base64,' + b64;
+    }
+  } catch(e) {
+    console.error('Captcha load failed:', e);
+  }
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const captchaCode = document.getElementById('loginCaptcha').value.trim();
+
+  if (!username || !password) { errEl.textContent = '请输入账号和密码'; return; }
+  if (!captchaCode) { errEl.textContent = '请输入验证码'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, captcha_id: captchaId, captcha_code: captchaCode })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.token) {
+      saveToken(data.token);
+      showApp();
+    } else {
+      errEl.textContent = data.error || '登录失败';
+      refreshCaptcha();
+      document.getElementById('loginCaptcha').value = '';
+    }
+  } catch(err) {
+    errEl.textContent = '网络错误，请重试';
+    refreshCaptcha();
+  }
+
+  btn.disabled = false;
+  btn.textContent = '登 录';
+}
+
+async function logout() {
+  try {
+    await fetch('/api/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + (authToken || '') }
+    });
+  } catch(e) {}
+  clearToken();
+  location.reload();
+}
+
+function showApp() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+function showLogin() {
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  refreshCaptcha();
+}
+
+async function checkAuth() {
+  loadToken();
+  if (!authToken) { showLogin(); return false; }
+  try {
+    const res = await fetch('/api/check-auth', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (res.ok) { showApp(); return true; }
+  } catch(e) {}
+  clearToken();
+  showLogin();
+  return false;
+}
+
+// ── Mobile Sidebar ───────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  const isOpen = sidebar.classList.contains('open');
+
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+  btn.classList.toggle('active');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+  document.getElementById('hamburgerBtn').classList.remove('active');
+}
 
 // ── URL Routing ──────────────────────────────────
 function updateURL() {
@@ -23,9 +148,21 @@ let currentTab = 'info';
 
 // ── API helpers ──────────────────────────────────
 async function api(url, method = 'GET', body = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
+
+  // Auto-logout on 401
+  if (res.status === 401) {
+    clearToken();
+    showLogin();
+    throw new Error('Session expired');
+  }
+
   return res.json();
 }
 
@@ -101,6 +238,11 @@ async function selectProject(id) {
   renderProject();
   loadProjects();
   updateURL();
+
+  // Mobile: close sidebar and update title
+  closeSidebar();
+  const mt = document.getElementById('mobileTitle');
+  if (mt) mt.textContent = currentProject.topic || 'PPT Generator';
 }
 
 // ── Render Project ───────────────────────────────
@@ -976,6 +1118,17 @@ function closePrivacy() {
 
 // ── Init ─────────────────────────────────────────
 async function init() {
+  // Wire up login form
+  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+  // Wire up hamburger
+  document.getElementById('hamburgerBtn').addEventListener('click', toggleSidebar);
+
+  // Check auth first
+  const ok = await checkAuth();
+  if (!ok) return;
+
+  // Load app data
   await loadProjects();
   await loadFooter();
   await loadModals();

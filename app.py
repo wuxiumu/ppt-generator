@@ -5,9 +5,12 @@ Flask API for project management, prompt editing, and generation.
 """
 
 import asyncio
+import hashlib
 import json
 import os
+import random
 import re
+import secrets
 import uuid
 import threading
 import time
@@ -27,8 +30,16 @@ OUTPUT_DIR = Path("output")
 PROJECTS_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Generation state (for polling)
-gen_status = {}  # {project_id: {"status": "running|done|error", "progress": "", "outputs": []}}
+# Auth config
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "admin888")
+SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
+TOKEN_EXPIRE = 86400  # 24 hours
+
+# In-memory stores
+gen_status = {}       # {project_id: {"status": "running|done|error", ...}}
+auth_tokens = {}      # {token: {"user": str, "created": float}}
+captcha_store = {}    # {captcha_id: {"answer": str, "created": float}}
 
 # ── Default Prompts (extracted from main.py) ─────────────
 
@@ -163,6 +174,179 @@ def list_outputs(pid: str) -> list[dict]:
         if f.suffix in (".html", ".pptx"):
             files.append({"name": f.name, "ext": f.suffix, "size_kb": round(f.stat().st_size / 1024, 1), "created": datetime.fromtimestamp(f.stat().st_mtime).strftime("%m-%d %H:%M")})
     return files
+
+
+# ── Auth: Captcha + Login + Middleware ────────────────────
+
+def _generate_captcha_image():
+    """Generate a math captcha image, return (captcha_id, image_bytes)."""
+    from PIL import Image, ImageDraw, ImageFont
+    import io, string
+
+    # Math expression
+    ops = ["+", "-", "×"]
+    op = random.choice(ops)
+    if op == "×":
+        a, b = random.randint(2, 9), random.randint(2, 9)
+        answer = a * b
+    elif op == "-":
+        a, b = random.randint(10, 50), random.randint(1, 9)
+        answer = a - b
+    else:
+        a, b = random.randint(5, 40), random.randint(5, 40)
+        answer = a + b
+
+    text = f"{a} {op} {b} = ?"
+
+    # Draw image
+    w, h = 140, 46
+    img = Image.new("RGB", (w, h), "#f0f0f5")
+    draw = ImageDraw.Draw(img)
+
+    # Noise lines
+    for _ in range(4):
+        x1, y1 = random.randint(0, w), random.randint(0, h)
+        x2, y2 = random.randint(0, w), random.randint(0, h)
+        color = f"#{random.randint(0xa0,0xcc):02x}{random.randint(0xa0,0xcc):02x}{random.randint(0xa0,0xcc):02x}"
+        draw.line([(x1, y1), (x2, y2)], fill=color, width=1)
+
+    # Noise dots
+    for _ in range(30):
+        draw.point((random.randint(0, w), random.randint(0, h)),
+                   fill=f"#{random.randint(0x80,0xbb):02x}{random.randint(0x80,0xbb):02x}{random.randint(0x80,0xbb):02x}")
+
+    # Text
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+    except Exception:
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+        except Exception:
+            font = ImageFont.load_default()
+
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (w - tw) // 2 + random.randint(-3, 3)
+    y = (h - th) // 2 + random.randint(-2, 2)
+
+    # Draw each char with slight color variation
+    cx = x
+    for ch in text:
+        r = random.randint(0x20, 0x50)
+        g = random.randint(0x20, 0x50)
+        b = random.randint(0x60, 0x90)
+        draw.text((cx, y), ch, fill=f"#{r:02x}{g:02x}{b:02x}", font=font)
+        cx += random.randint(14, 19)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    captcha_id = secrets.token_hex(8)
+    captcha_store[captcha_id] = {"answer": str(answer), "created": time.time()}
+
+    # Cleanup old captchas (>10min)
+    expired = [k for k, v in captcha_store.items() if time.time() - v["created"] > 600]
+    for k in expired:
+        del captcha_store[k]
+
+    return captcha_id, buf.getvalue()
+
+
+@app.route("/api/captcha")
+def api_captcha():
+    captcha_id, img_bytes = _generate_captcha_image()
+    from flask import Response
+    return Response(
+        json.dumps({"captcha_id": captcha_id}),
+        mimetype="application/json",
+        headers={"X-Captcha-Image": __import__('base64').b64encode(img_bytes).decode()}
+    )
+
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.json or {}
+    username = data.get("username", "")
+    password = data.get("password", "")
+    captcha_id = data.get("captcha_id", "")
+    captcha_code = data.get("captcha_code", "")
+
+    # Validate captcha
+    cap = captcha_store.pop(captcha_id, None)
+    if not cap:
+        return jsonify({"error": "验证码已过期，请刷新"}), 400
+    if cap["answer"] != captcha_code.strip():
+        return jsonify({"error": "验证码错误"}), 400
+
+    # Validate credentials
+    if username != ADMIN_USER or password != ADMIN_PASS:
+        return jsonify({"error": "用户名或密码错误"}), 401
+
+    # Generate token
+    token = secrets.token_hex(32)
+    auth_tokens[token] = {"user": username, "created": time.time()}
+
+    # Cleanup expired tokens
+    expired = [k for k, v in auth_tokens.items() if time.time() - v["created"] > TOKEN_EXPIRE]
+    for k in expired:
+        del auth_tokens[k]
+
+    return jsonify({"token": token, "user": username})
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+    auth_tokens.pop(token, None)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/check-auth")
+def api_check_auth():
+    """Check if current token is valid (for frontend init)."""
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+    if token in auth_tokens:
+        info = auth_tokens[token]
+        if time.time() - info["created"] < TOKEN_EXPIRE:
+            return jsonify({"ok": True, "user": info["user"]})
+    return jsonify({"ok": False}), 401
+
+
+# Routes that don't require auth
+PUBLIC_ROUTES = {
+    "/", "/api/login", "/api/captcha", "/api/check-auth",
+    "/api/share-info",
+}
+PUBLIC_PREFIXES = ("/css/", "/js/", "/share/", "/api/temp/")
+
+
+@app.before_request
+def require_auth():
+    path = request.path
+
+    # Allow public routes
+    if path in PUBLIC_ROUTES:
+        return None
+    for prefix in PUBLIC_PREFIXES:
+        if path.startswith(prefix):
+            return None
+
+    # Allow output file downloads (for sharing)
+    if path.startswith("/api/projects/") and "/output/" in path:
+        return None
+
+    # OPTIONS preflight
+    if request.method == "OPTIONS":
+        return None
+
+    # Check token
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+    if token in auth_tokens:
+        info = auth_tokens[token]
+        if time.time() - info["created"] < TOKEN_EXPIRE:
+            return None
+
+    return jsonify({"error": "未登录", "code": "AUTH_REQUIRED"}), 401
 
 
 # ── API Routes ────────────────────────────────────────────

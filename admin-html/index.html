@@ -2,15 +2,57 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PPT Generator — 管理后台</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-icon">📊</div>
+      <h1>PPT Generator</h1>
+      <p>管理后台</p>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <div class="login-field">
+        <label>账号</label>
+        <input type="text" id="loginUser" placeholder="请输入账号" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label>密码</label>
+        <input type="password" id="loginPass" placeholder="请输入密码" autocomplete="current-password" required>
+      </div>
+      <div class="login-field login-captcha-row">
+        <label>验证码</label>
+        <div class="captcha-group">
+          <input type="text" id="loginCaptcha" placeholder="计算结果" inputmode="numeric" required>
+          <img id="captchaImg" class="captcha-img" alt="验证码" onclick="refreshCaptcha()" title="点击刷新">
+        </div>
+      </div>
+      <button type="submit" class="login-btn" id="loginBtn">登 录</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Mobile Header (shown only on mobile) -->
+<div class="mobile-header" id="mobileHeader">
+  <button class="hamburger" id="hamburgerBtn" aria-label="菜单">
+    <span></span><span></span><span></span>
+  </button>
+  <h2 class="mobile-title" id="mobileTitle">PPT Generator</h2>
+  <button class="mobile-logout" id="mobileLogoutBtn" onclick="logout()">退出</button>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <!-- Sidebar -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h1>PPT Generator</h1>
     <p>管理后台</p>
@@ -20,15 +62,19 @@
   <div class="project-more" id="projectMore" style="display:none">
     <button class="btn-more" onclick="showAllProjects()">查看全部项目 (<span id="projectCount">0</span>)</button>
   </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">退出登录</button>
+  </div>
 </div>
 
 <!-- Main -->
-<div class="main">
+<div class="main" id="mainArea">
   <div class="main-header">
     <h2 id="headerTitle">选择一个项目</h2>
     <div class="header-actions">
       <button class="btn btn-sm btn-danger" onclick="deleteProject()" id="btnDelete" style="display:none">🗑 删除</button>
       <button class="btn btn-sm btn-secondary" onclick="saveProject()" id="btnSave" style="display:none">💾 保存</button>
+      <button class="btn-logout-desktop" onclick="logout()" title="退出登录">退出</button>
     </div>
   </div>
 
