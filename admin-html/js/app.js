@@ -176,9 +176,12 @@ function renderSlides() {
     <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="openSlideEditor(${i})">
       <div class="slide-num">${s.slide_num || i + 1}</div>
       <div class="slide-body">
-        <div class="slide-meta">
-          <span class="layout-badge">${esc(s.layout || 'bullets')}</span>
-          <span class="act-badge">Act ${s.act || '?'}</span>
+        <div class="slide-header">
+          <div class="slide-meta">
+            <span class="layout-badge">${esc(s.layout || 'bullets')}</span>
+            <span class="act-badge">Act ${s.act || '?'}</span>
+          </div>
+          <button class="btn-copy-md" onclick="event.stopPropagation(); copySlideAsMarkdown(${i})" title="复制为 Markdown">📋</button>
         </div>
         <h4 class="slide-title">${esc(s.title || '无标题')}</h4>
         ${s.subtitle ? `<div class="slide-subtitle">${esc(s.subtitle)}</div>` : ''}
@@ -187,6 +190,76 @@ function renderSlides() {
     </div>
     `;
   }).join('');
+}
+
+// ── Copy as Markdown ─────────────────────────────
+function copySlideAsMarkdown(index) {
+  const slide = currentProject.slides[index];
+  if (!slide) return;
+
+  let md = '';
+
+  // Title
+  md += `## ${slide.title || '无标题'}\n\n`;
+
+  // Subtitle
+  if (slide.subtitle) {
+    md += `**${slide.subtitle}**\n\n`;
+  }
+
+  // Body text
+  if (slide.body_text) {
+    md += `${slide.body_text}\n\n`;
+  }
+
+  // Bullets
+  if (slide.bullets && slide.bullets.length > 0) {
+    md += slide.bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+  }
+
+  // Highlight (big_number)
+  if (slide.highlight) {
+    md += `> **${slide.highlight}**\n\n`;
+  }
+
+  // Code
+  if (slide.code) {
+    md += '```python\n' + slide.code + '\n```\n\n';
+  }
+
+  // Annotations
+  if (slide.annotations && slide.annotations.length > 0) {
+    md += '**注释：**\n';
+    md += slide.annotations.map(a => `- ${a}`).join('\n') + '\n\n';
+  }
+
+  // Comparison
+  if (slide.left_title || slide.right_title) {
+    if (slide.left_title) {
+      md += `### ${slide.left_title}\n`;
+      if (slide.left_bullets && slide.left_bullets.length > 0) {
+        md += slide.left_bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+      }
+    }
+    if (slide.right_title) {
+      md += `### ${slide.right_title}\n`;
+      if (slide.right_bullets && slide.right_bullets.length > 0) {
+        md += slide.right_bullets.map(b => `- ${b}`).join('\n') + '\n\n';
+      }
+    }
+  }
+
+  // Speaker notes
+  if (slide.speaker_notes) {
+    md += `---\n*演讲备注：${slide.speaker_notes}*\n`;
+  }
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(md).then(() => {
+    toast('已复制为 Markdown');
+  }).catch(err => {
+    toast('复制失败：' + err.message);
+  });
 }
 
 function selectSlide(index) {

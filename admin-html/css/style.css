@@ -396,10 +396,31 @@ body {
   flex: 1;
 }
 
+.slide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .slide-meta {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
+}
+
+.btn-copy-md {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-copy-md:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
 }
 
 .layout-badge, .act-badge {
