@@ -11,6 +11,7 @@ env/
 
 # Generated output (PPTX/HTML from runs)
 output/
+comic-output/
 projects/
 debug/
 log/
