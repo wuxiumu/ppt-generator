@@ -620,15 +620,11 @@ function saveSlideEdit() {
     }
   });
 
-  // Update slide in project
+  // Update slide in project (real-time save to memory)
   currentProject.slides[editingSlideIndex] = editingSlideData;
 
-  // Close modal
-  closeSlideEditor();
-
-  // Re-render slides list
+  // Re-render slides list to show updated content
   renderSlides();
-  toast('幻灯片已更新');
 }
 
 function closeSlideEditor() {

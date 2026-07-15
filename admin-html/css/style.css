@@ -297,6 +297,13 @@ body {
   margin-bottom: 16px;
 }
 
+.slides-toolbar.sticky-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 .slides-hint {
   font-size: 13px;
   color: var(--text2);
@@ -693,15 +700,6 @@ body {
 
 .btn-icon:hover {
   background: #ff5252;
-}
-
-.slide-editor-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  margin-top: 20px;
 }
 
 /* ── History Modal ─────────────────────────────── */
