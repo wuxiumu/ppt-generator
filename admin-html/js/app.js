@@ -6,6 +6,21 @@ let allProjects = [];
 let editingSlideIndex = null;
 let editingSlideData = null;
 
+// ── URL Routing ──────────────────────────────────
+function updateURL() {
+  const hash = currentId ? `#${currentId}/${currentTab || 'info'}` : '';
+  history.replaceState(null, '', hash || window.location.pathname);
+}
+
+function parseURL() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return { projectId: null, tab: 'info' };
+  const [projectId, tab] = hash.split('/');
+  return { projectId, tab: tab || 'info' };
+}
+
+let currentTab = 'info';
+
 // ── API helpers ──────────────────────────────────
 async function api(url, method = 'GET', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -85,6 +100,7 @@ async function selectProject(id) {
   selectedSlideIndex = null;
   renderProject();
   loadProjects();
+  updateURL();
 }
 
 // ── Render Project ───────────────────────────────
@@ -137,20 +153,40 @@ function renderSlides() {
 
   empty.style.display = 'none';
   toolbar.style.display = '';
-  container.innerHTML = slides.map((s, i) => `
+  container.innerHTML = slides.map((s, i) => {
+    // Build preview content based on layout
+    let preview = '';
+
+    if (s.bullets && s.bullets.length > 0) {
+      preview = `<div class="slide-preview-bullets">${s.bullets.map(b => `• ${esc(b)}`).join('<br>')}</div>`;
+    } else if (s.body_text) {
+      preview = `<div class="slide-preview-text">${esc(s.body_text)}</div>`;
+    } else if (s.highlight) {
+      preview = `<div class="slide-preview-highlight">${esc(s.highlight)}</div>`;
+    } else if (s.code) {
+      preview = `<div class="slide-preview-code">${esc(s.code).substring(0, 100)}${s.code.length > 100 ? '...' : ''}</div>`;
+    } else if (s.left_title || s.right_title) {
+      preview = `<div class="slide-preview-comparison">
+        <div class="comp-col"><strong>${esc(s.left_title || '左栏')}</strong>: ${(s.left_bullets || []).length} 项</div>
+        <div class="comp-col"><strong>${esc(s.right_title || '右栏')}</strong>: ${(s.right_bullets || []).length} 项</div>
+      </div>`;
+    }
+
+    return `
     <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="openSlideEditor(${i})">
       <div class="slide-num">${s.slide_num || i + 1}</div>
       <div class="slide-body">
         <div class="slide-meta">
-          <span>${esc(s.layout || 'bullets')}</span>
-          <span>Act ${s.act || '?'}</span>
+          <span class="layout-badge">${esc(s.layout || 'bullets')}</span>
+          <span class="act-badge">Act ${s.act || '?'}</span>
         </div>
-        <h4>${esc(s.title || '无标题')}</h4>
-        <p style="font-size:13px;color:var(--text2);margin:4px 0">${esc(s.body_text || '').substring(0, 80)}</p>
-        ${(s.bullets || []).length ? `<div style="margin-top:6px;font-size:12px;color:var(--text3)">要点: ${s.bullets.map(b => esc(b)).join(' / ')}</div>` : ''}
+        <h4 class="slide-title">${esc(s.title || '无标题')}</h4>
+        ${s.subtitle ? `<div class="slide-subtitle">${esc(s.subtitle)}</div>` : ''}
+        ${preview}
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function selectSlide(index) {
@@ -336,8 +372,10 @@ function previewOutput(filename) {
 
 // ── Tab Switching ────────────────────────────────
 function switchTab(name) {
+  currentTab = name;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `pane-${name}`));
+  updateURL();
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -735,4 +773,15 @@ function formatTime(timestamp) {
 }
 
 // ── Init ─────────────────────────────────────────
-loadProjects();
+async function init() {
+  await loadProjects();
+
+  // Restore state from URL
+  const { projectId, tab } = parseURL();
+  if (projectId && allProjects.find(p => p.id === projectId)) {
+    await selectProject(projectId);
+    switchTab(tab);
+  }
+}
+
+init();

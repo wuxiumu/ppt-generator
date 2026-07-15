@@ -44,6 +44,16 @@ document.getElementById('shareModal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
 
+// Close slide editor modal on overlay click
+document.getElementById('slideEditorModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSlideEditor();
+});
+
+// Close history modal on overlay click
+document.getElementById('historyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeHistory();
+});
+
 // Close modal on Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {

@@ -343,24 +343,91 @@ body {
   padding-top: 4px;
 }
 
-.slide-body h4 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
+.slide-body {
+  flex: 1;
 }
 
-.slide-body .slide-meta {
-  font-size: 12px;
-  color: var(--text3);
+.slide-meta {
+  display: flex;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.slide-body .slide-meta span {
+.layout-badge, .act-badge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.layout-badge {
   background: var(--accent-light);
   color: var(--accent);
-  padding: 2px 8px;
+}
+
+.act-badge {
+  background: #f0f0f0;
+  color: var(--text2);
+}
+
+.slide-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text);
+}
+
+.slide-subtitle {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+
+.slide-preview-bullets {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-top: 6px;
+}
+
+.slide-preview-text {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.slide-preview-highlight {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+.slide-preview-code {
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 11px;
+  background: #f8f8f8;
+  padding: 8px;
   border-radius: 4px;
-  margin-right: 6px;
+  margin-top: 6px;
+  color: var(--text2);
+  overflow: hidden;
+}
+
+.slide-preview-comparison {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.comp-col {
+  flex: 1;
+  padding: 6px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  color: var(--text2);
 }
 
 .slide-body textarea {
