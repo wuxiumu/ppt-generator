@@ -173,7 +173,7 @@ function renderSlides() {
     }
 
     return `
-    <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="openSlideEditor(${i})">
+    <div class="slide-card ${selectedSlideIndex === i ? 'selected' : ''}" onclick="selectSlide(${i})">
       <div class="slide-num">${s.slide_num || i + 1}</div>
       <div class="slide-body">
         <div class="slide-header">
@@ -186,10 +186,18 @@ function renderSlides() {
         <h4 class="slide-title">${esc(s.title || '无标题')}</h4>
         ${s.subtitle ? `<div class="slide-subtitle">${esc(s.subtitle)}</div>` : ''}
         ${preview}
+        <div class="slide-actions">
+          <button class="btn-edit" onclick="event.stopPropagation(); openSlideEditor(${i})">✏️ 编辑</button>
+        </div>
       </div>
     </div>
     `;
   }).join('');
+}
+
+function selectSlide(index) {
+  selectedSlideIndex = selectedSlideIndex === index ? null : index;
+  renderSlides();
 }
 
 // ── Copy as Markdown ─────────────────────────────

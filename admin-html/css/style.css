@@ -500,6 +500,28 @@ body {
   color: var(--text2);
 }
 
+.slide-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit {
+  padding: 4px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 .slide-body textarea {
   width: 100%;
   padding: 8px 10px;
