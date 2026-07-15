@@ -131,7 +131,11 @@ def list_projects() -> list[dict]:
         if d.is_dir():
             pj = load_project(d.name)
             if pj:
-                results.append({"id": d.name, **{k: pj[k] for k in ["topic", "brief", "audience", "created_at", "updated_at"] if k in pj}})
+                results.append({
+                    "id": d.name,
+                    **{k: pj[k] for k in ["topic", "brief", "audience", "created_at", "updated_at"] if k in pj},
+                    "slides_count": len(pj.get("slides", []))
+                })
     return results
 
 
@@ -150,7 +154,17 @@ def list_outputs(pid: str) -> list[dict]:
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "admin.html")
+    return send_from_directory("admin-html", "index.html")
+
+
+@app.route("/css/<path:filename>")
+def serve_css(filename):
+    return send_from_directory("admin-html/css", filename)
+
+
+@app.route("/js/<path:filename>")
+def serve_js(filename):
+    return send_from_directory("admin-html/js", filename)
 
 
 @app.route("/share/<pid>/<filename>")
@@ -224,6 +238,23 @@ def api_update_project(pid):
             project[key] = data[key]
     project["updated_at"] = datetime.now().isoformat()
     save_project(pid, project)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/projects/<pid>", methods=["DELETE"])
+def api_delete_project(pid):
+    project_dir = PROJECTS_DIR / pid
+    if not project_dir.exists():
+        return jsonify({"error": "not found"}), 404
+
+    # Delete project directory
+    import shutil
+    shutil.rmtree(project_dir)
+
+    # Clean up gen_status if exists
+    if pid in gen_status:
+        del gen_status[pid]
+
     return jsonify({"ok": True})
 
 
@@ -398,7 +429,13 @@ def _run_generate(pid: str, project: dict, provider: str, fmt: str):
 # ── Run ───────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="PPT Generator Admin")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("FLASK_PORT", 8080)))
+    args = parser.parse_args()
+    port = args.port
+
     print("\n🖥️  PPT Generator Admin")
     print(f"📂 项目目录: {PROJECTS_DIR.resolve()}")
-    print(f"🌐 访问: http://localhost:8080\n")
-    app.run(host="0.0.0.0", port=8080, debug=False)
+    print(f"🌐 访问: http://localhost:{port}\n")
+    app.run(host="0.0.0.0", port=port, debug=False)

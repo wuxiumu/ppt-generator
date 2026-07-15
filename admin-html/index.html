@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPT Generator — 管理后台</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>PPT Generator</h1>
+    <p>管理后台</p>
+  </div>
+  <button class="btn-new" onclick="createProject()">+ 新建项目</button>
+  <div class="project-list" id="projectList"></div>
+  <div class="project-more" id="projectMore" style="display:none">
+    <button class="btn-more" onclick="showAllProjects()">查看全部项目 (<span id="projectCount">0</span>)</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="main-header">
+    <h2 id="headerTitle">选择一个项目</h2>
+    <div class="header-actions">
+      <button class="btn btn-sm btn-danger" onclick="deleteProject()" id="btnDelete" style="display:none">🗑 删除</button>
+      <button class="btn btn-sm btn-secondary" onclick="saveProject()" id="btnSave" style="display:none">💾 保存</button>
+    </div>
+  </div>
+
+  <div class="tab-bar" id="tabBar" style="display:none">
+    <button class="tab-btn active" data-tab="info">📝 基本信息</button>
+    <button class="tab-btn" data-tab="prompts">🤖 提示词</button>
+    <button class="tab-btn" data-tab="slides">🎴 幻灯片</button>
+    <button class="tab-btn" data-tab="generate">🚀 生成</button>
+    <button class="tab-btn" data-tab="outputs">📁 输出文件</button>
+  </div>
+
+  <div class="tab-content">
+    <!-- Empty state -->
+    <div id="emptyState" class="empty">
+      <h3>选择或创建一个项目</h3>
+      <p>从左侧列表选择项目，或点击「+ 新建项目」开始</p>
+    </div>
+
+    <!-- Tab: Basic Info -->
+    <div class="tab-pane" id="pane-info">
+      <div class="card">
+        <h3>项目信息</h3>
+        <div class="field">
+          <label>主题</label>
+          <div class="hint">PPT的核心主题，会显示在封面</div>
+          <input id="f-topic" placeholder="例：Python 入门 30 分钟">
+        </div>
+        <div class="field">
+          <label>简介</label>
+          <div class="hint">500字以内，描述PPT要覆盖的内容范围</div>
+          <textarea id="f-brief" placeholder="例：帮零基础的人理解变量、循环、函数..."></textarea>
+        </div>
+        <div class="field">
+          <label>目标受众</label>
+          <div class="hint">决定语气、深度和叙事策略</div>
+          <input id="f-audience" placeholder="例：编程零基础 / 非技术CEO / 咖啡新手">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Prompts -->
+    <div class="tab-pane" id="pane-prompts">
+      <div class="card">
+        <h3>📋 叙事规划提示词 (Planner)</h3>
+        <div class="hint" style="margin-bottom:10px">控制AI如何规划25-30张幻灯片的叙事结构。可用变量: <code>{topic}</code> <code>{brief}</code> <code>{audience}</code></div>
+        <div class="field">
+          <label>系统提示词</label>
+          <textarea id="f-planner-system" class="prompt" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>用户提示词模板</label>
+          <textarea id="f-planner-prompt" class="prompt" rows="12"></textarea>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="resetPrompts('planner')">恢复默认</button>
+      </div>
+      <div class="card">
+        <h3>✍️ 内容生成提示词 (Writer)</h3>
+        <div class="hint" style="margin-bottom:10px">控制AI如何为每张幻灯片撰写内容。可用变量: <code>{num}</code> <code>{total}</code> <code>{role}</code> <code>{layout}</code> <code>{brief}</code> <code>{transition}</code> <code>{prev}</code> <code>{next}</code> <code>{tone}</code> <code>{act}</code></div>
+        <div class="field">
+          <label>系统提示词</label>
+          <textarea id="f-writer-system" class="prompt" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>用户提示词模板</label>
+          <textarea id="f-writer-prompt" class="prompt" rows="12"></textarea>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="resetPrompts('writer')">恢复默认</button>
+      </div>
+    </div>
+
+    <!-- Tab: Slides -->
+    <div class="tab-pane" id="pane-slides">
+      <div class="slides-toolbar" id="slidesToolbar" style="display:none">
+        <button class="btn btn-sm btn-secondary" onclick="moveSlide(-1)">⬆ 上移</button>
+        <button class="btn btn-sm btn-secondary" onclick="moveSlide(1)">⬇ 下移</button>
+        <span class="slides-hint">点击幻灯片卡片选择，然后使用上移/下移按钮调整顺序</span>
+      </div>
+      <div id="slidesList"></div>
+      <div id="slidesEmpty" class="empty" style="display:none">
+        <h3>还没有幻灯片</h3>
+        <p>点击「生成」标签页生成内容后，这里会显示所有幻灯片</p>
+      </div>
+    </div>
+
+    <!-- Tab: Generate -->
+    <div class="tab-pane" id="pane-generate">
+      <div class="card">
+        <h3>生成设置</h3>
+        <div class="gen-row">
+          <div class="field">
+            <label>AI 模型</label>
+            <select id="f-provider"></select>
+          </div>
+          <div class="field">
+            <label>输出格式</label>
+            <select id="f-format">
+              <option value="both">HTML + PPTX</option>
+              <option value="html">仅 HTML</option>
+              <option value="pptx">仅 PPTX</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btnGenerate" onclick="generate()">🚀 开始生成</button>
+        </div>
+        <div class="gen-status" id="genStatus"></div>
+      </div>
+      <div class="card">
+        <h3>生成说明</h3>
+        <div style="font-size:14px; line-height:1.8; color:var(--text2)">
+          <p><strong>Stage 1 — 叙事规划</strong>：AI 根据主题和受众，规划25-30张幻灯片的三幕结构、布局分配、配色方案</p>
+          <p style="margin-top:8px"><strong>Stage 2 — 内容生成</strong>：AI 并行生成每张幻灯片的标题、要点、正文等内容</p>
+          <p style="margin-top:8px"><strong>Stage 3 — 渲染输出</strong>：将结构化内容渲染为 HTML 和/或 PPTX 文件</p>
+          <p style="margin-top:12px; color:var(--text3)">预计耗时 25-35 秒，成本约 $0.01/次</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Outputs -->
+    <div class="tab-pane" id="pane-outputs">
+      <div id="outputsList"></div>
+      <div id="outputsEmpty" class="empty" style="display:none">
+        <h3>还没有输出文件</h3>
+        <p>在「生成」标签页点击生成按钮，输出文件会显示在这里</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- All Projects Modal -->
+<div class="modal-overlay" id="allProjectsModal">
+  <div class="modal modal-large">
+    <h3>所有项目</h3>
+    <p class="modal-sub">共 <span id="totalProjects">0</span> 个项目</p>
+    <div class="all-projects-list" id="allProjectsList"></div>
+    <button class="modal-close" onclick="closeAllProjects()">关闭</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="save-toast" id="toast">已保存</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal">
+    <h3>📤 分享演示文稿</h3>
+    <p class="modal-sub">同一局域网内的设备扫码即可查看</p>
+    <div id="qrContainer"></div>
+    <div class="share-url">
+      <input id="shareUrlInput" readonly>
+      <button class="btn btn-sm btn-secondary" onclick="copyShareUrl()">复制</button>
+    </div>
+    <div class="modal-actions">
+      <a class="btn btn-sm btn-primary" id="shareOpenBtn" href="#" target="_blank">在新窗口打开</a>
+    </div>
+    <button class="modal-close" onclick="closeShareModal()">关闭</button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/share.js"></script>
+</body>
+</html>
