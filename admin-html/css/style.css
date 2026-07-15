@@ -340,17 +340,17 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 12px 28px;
   background: var(--accent-light);
-  border-radius: 8px;
-  margin-bottom: 16px;
+  margin: -24px -28px 16px -28px;
 }
 
 .slides-toolbar.sticky-toolbar {
   position: sticky;
-  top: 0;
+  top: -24px;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 16px;
 }
 
 .slides-hint {
