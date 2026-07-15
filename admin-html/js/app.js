@@ -658,7 +658,7 @@ function saveSlideEdit() {
     }
   });
 
-  // Update slide in project (real-time save to memory)
+  // Update slide in project (save to memory only, not backend)
   currentProject.slides[editingSlideIndex] = editingSlideData;
 
   // Re-render slides list to show updated content
@@ -666,6 +666,11 @@ function saveSlideEdit() {
 }
 
 function closeSlideEditor() {
+  // Save changes to memory before closing
+  if (editingSlideIndex !== null && editingSlideData) {
+    saveSlideEdit();
+  }
+
   document.getElementById('slideEditorModal').classList.remove('show');
   editingSlideIndex = null;
   editingSlideData = null;
