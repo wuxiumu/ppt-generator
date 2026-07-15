@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 亲子漫画生成器</title>
+  <link rel="stylesheet" href="/comic-admin/css/style.css">
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <h1>AI 亲子漫画</h1>
+    <p class="login-sub">登录以管理漫画项目</p>
+    <form id="loginForm">
+      <div class="field">
+        <label>用户名</label>
+        <input type="text" id="loginUser" placeholder="admin" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input type="password" id="loginPass" placeholder="密码" autocomplete="current-password" required>
+      </div>
+      <div class="field captcha-field">
+        <label>验证码</label>
+        <div class="captcha-row">
+          <input type="text" id="loginCaptcha" placeholder="计算结果" required>
+          <img id="captchaImg" alt="验证码" title="点击刷新" onclick="refreshCaptcha()">
+        </div>
+      </div>
+      <div id="loginError" class="login-error"></div>
+      <button type="submit" class="btn btn-primary btn-full">登录</button>
+    </form>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="appContainer" class="app-container" style="display:none;">
+
+  <!-- Mobile Header -->
+  <div class="mobile-header">
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-title" id="mobileTitle">AI 亲子漫画</span>
+    <button class="mobile-logout" onclick="logout()">退出</button>
+  </div>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>AI 亲子漫画</h1>
+      <p>故事漫画生成器</p>
+    </div>
+    <button class="btn-new" onclick="createComic()">+ 新建漫画</button>
+    <div class="project-list" id="comicList"></div>
+    <div class="sidebar-footer">
+      <a href="/" class="btn-switch">切换到 PPT</a>
+      <button class="btn-logout-desktop" onclick="logout()">退出登录</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <h2 id="currentTitle">选择或新建漫画项目</h2>
+    </div>
+
+    <div class="tab-bar" id="tabBar" style="display:none;">
+      <button class="tab-btn active" data-tab="info">故事信息</button>
+      <button class="tab-btn" data-tab="pages">页面预览</button>
+      <button class="tab-btn" data-tab="generate">生成</button>
+      <button class="tab-btn" data-tab="output">输出文件</button>
+    </div>
+
+    <div class="tab-content" id="tabContent">
+      <!-- Empty state -->
+      <div id="emptyState" class="empty">
+        <h3>还没有漫画项目</h3>
+        <p>点击左侧「+ 新建漫画」开始创作</p>
+      </div>
+
+      <!-- Info Tab -->
+      <div class="tab-pane" id="tab-info">
+        <div class="card">
+          <h3>基本信息</h3>
+          <div class="field">
+            <label>故事主题</label>
+            <input type="text" id="comicTopic" placeholder="例：月亮上的朋友">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>主角名字</label>
+              <input type="text" id="comicChildName" placeholder="例：小明">
+            </div>
+            <div class="field">
+              <label>年龄</label>
+              <input type="number" id="comicAge" min="2" max="12" value="5">
+            </div>
+          </div>
+          <div class="field">
+            <label>故事模板</label>
+            <select id="comicTemplate"></select>
+            <div class="hint" id="templateDesc"></div>
+          </div>
+          <div class="field">
+            <label>补充说明（可选）</label>
+            <textarea id="comicExtra" placeholder="例：孩子最近喜欢恐龙，可以加入恐龙元素" rows="3"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveComicInfo()">保存信息</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteComic()" style="margin-left:8px;">删除项目</button>
+        </div>
+      </div>
+
+      <!-- Pages Tab -->
+      <div class="tab-pane" id="tab-pages">
+        <div class="pages-toolbar" id="pagesToolbar">
+          <button class="btn btn-secondary btn-sm" onclick="previewComic()">预览漫画</button>
+          <span class="pages-hint">共 <span id="pageCount">0</span> 页</span>
+        </div>
+        <div id="pagesList"></div>
+      </div>
+
+      <!-- Generate Tab -->
+      <div class="tab-pane" id="tab-generate">
+        <div class="card">
+          <h3>生成设置</h3>
+          <div class="gen-row">
+            <div class="field">
+              <label>模型</label>
+              <select id="comicProvider"></select>
+            </div>
+            <div class="field">
+              <label>输出格式</label>
+              <select id="comicFormat">
+                <option value="html">HTML</option>
+                <option value="pdf">PDF</option>
+                <option value="both">HTML + PDF</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnGenComic" onclick="generateComic()">开始生成</button>
+        </div>
+        <div class="gen-status" id="comicGenStatus"></div>
+      </div>
+
+      <!-- Output Tab -->
+      <div class="tab-pane" id="tab-output">
+        <div id="comicOutputList"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="save-toast" id="toast"></div>
+
+<script src="/comic-admin/js/app.js"></script>
+</body>
+</html>

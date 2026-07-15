@@ -27,8 +27,10 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 # ── Config ────────────────────────────────────────────────
 PROJECTS_DIR = Path("projects")
 OUTPUT_DIR = Path("output")
+COMICS_DIR = Path("comics")
 PROJECTS_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
+COMICS_DIR.mkdir(exist_ok=True)
 
 # Auth config
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
@@ -38,6 +40,7 @@ TOKEN_EXPIRE = 86400  # 24 hours
 
 # In-memory stores
 gen_status = {}       # {project_id: {"status": "running|done|error", ...}}
+comic_gen_status = {} # {comic_id: {"status": "running|done|error", ...}}
 auth_tokens = {}      # {token: {"user": str, "created": float}}
 captcha_store = {}    # {captcha_id: {"answer": str, "created": float}}
 
@@ -314,10 +317,10 @@ def api_check_auth():
 
 # Routes that don't require auth
 PUBLIC_ROUTES = {
-    "/", "/api/login", "/api/captcha", "/api/check-auth",
+    "/", "/comic", "/api/login", "/api/captcha", "/api/check-auth",
     "/api/share-info",
 }
-PUBLIC_PREFIXES = ("/css/", "/js/", "/share/", "/api/temp/")
+PUBLIC_PREFIXES = ("/css/", "/js/", "/share/", "/api/temp/", "/comic-admin/css/", "/comic-admin/js/", "/comic-share/")
 
 
 @app.before_request
@@ -333,6 +336,8 @@ def require_auth():
 
     # Allow output file downloads (for sharing)
     if path.startswith("/api/projects/") and "/output/" in path:
+        return None
+    if path.startswith("/api/comics/") and "/output/" in path:
         return None
 
     # OPTIONS preflight
@@ -671,6 +676,339 @@ def api_modals_config():
         config = json.load(f)
 
     return jsonify(config)
+
+
+# ── Comic Admin Static Files ─────────────────────────────
+
+@app.route("/comic")
+def comic_index():
+    return send_from_directory("comic-admin", "index.html")
+
+
+@app.route("/comic-admin/css/<path:filename>")
+def comic_serve_css(filename):
+    return send_from_directory("comic-admin/css", filename)
+
+
+@app.route("/comic-admin/js/<path:filename>")
+def comic_serve_js(filename):
+    return send_from_directory("comic-admin/js", filename)
+
+
+@app.route("/comic-share/<cid>/<filename>")
+def comic_share_output(cid, filename):
+    """Clean URL for sharing comics."""
+    out_dir = COMICS_DIR / cid / "output"
+    if not (out_dir / filename).exists():
+        return "File not found", 404
+    return send_from_directory(str(out_dir), filename)
+
+
+# ── Comic Helper Functions ───────────────────────────────
+
+def load_comic(cid: str) -> dict | None:
+    path = COMICS_DIR / cid / "comic.json"
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_comic(cid: str, data: dict):
+    path = COMICS_DIR / cid / "comic.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def list_comics() -> list[dict]:
+    results = []
+    for d in sorted(COMICS_DIR.iterdir()):
+        if d.is_dir():
+            comic = load_comic(d.name)
+            if comic:
+                results.append({
+                    "id": d.name,
+                    **{k: comic[k] for k in ["topic", "child_name", "age", "template", "created_at", "updated_at"] if k in comic},
+                    "pages_count": len(comic.get("pages", []))
+                })
+    return results
+
+
+def list_comic_outputs(cid: str) -> list[dict]:
+    out_dir = COMICS_DIR / cid / "output"
+    if not out_dir.exists():
+        return []
+    files = []
+    for f in sorted(out_dir.iterdir(), reverse=True):
+        if f.suffix in (".html", ".pdf"):
+            files.append({
+                "name": f.name,
+                "ext": f.suffix,
+                "size_kb": round(f.stat().st_size / 1024, 1),
+                "created": datetime.fromtimestamp(f.stat().st_mtime).strftime("%m-%d %H:%M")
+            })
+    return files
+
+
+# ── Comic API Routes ─────────────────────────────────────
+
+@app.route("/api/comics", methods=["GET"])
+def api_list_comics():
+    return jsonify(list_comics())
+
+
+@app.route("/api/comics", methods=["POST"])
+def api_create_comic():
+    data = request.json or {}
+    cid = uuid.uuid4().hex[:8]
+    comic = {
+        "topic": data.get("topic", "新故事"),
+        "child_name": data.get("child_name", "小朋友"),
+        "age": data.get("age", 5),
+        "template": data.get("template", "custom"),
+        "extra": data.get("extra", ""),
+        "pages": [],
+        "plan": {},
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+    }
+    save_comic(cid, comic)
+    return jsonify({"id": cid, **comic})
+
+
+@app.route("/api/comics/<cid>", methods=["GET"])
+def api_get_comic(cid):
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+    comic["id"] = cid
+    comic["outputs"] = list_comic_outputs(cid)
+    return jsonify(comic)
+
+
+@app.route("/api/comics/<cid>", methods=["PUT"])
+def api_update_comic(cid):
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+    data = request.json or {}
+    for key in ["topic", "child_name", "age", "template", "extra"]:
+        if key in data:
+            comic[key] = data[key]
+    comic["updated_at"] = datetime.now().isoformat()
+    save_comic(cid, comic)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/comics/<cid>", methods=["DELETE"])
+def api_delete_comic(cid):
+    comic_dir = COMICS_DIR / cid
+    if not comic_dir.exists():
+        return jsonify({"error": "not found"}), 404
+    import shutil
+    shutil.rmtree(comic_dir)
+    if cid in comic_gen_status:
+        del comic_gen_status[cid]
+    return jsonify({"ok": True})
+
+
+@app.route("/api/comics/<cid>/pages", methods=["PUT"])
+def api_update_comic_pages(cid):
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+    pages = request.json
+    if isinstance(pages, list):
+        comic["pages"] = pages
+        comic["updated_at"] = datetime.now().isoformat()
+        save_comic(cid, comic)
+        return jsonify({"ok": True, "count": len(pages)})
+    return jsonify({"error": "expected array"}), 400
+
+
+@app.route("/api/comics/<cid>/plan", methods=["PUT"])
+def api_update_comic_plan(cid):
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+    comic["plan"] = request.json or {}
+    comic["updated_at"] = datetime.now().isoformat()
+    save_comic(cid, comic)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/comics/<cid>/generate", methods=["POST"])
+def api_generate_comic(cid):
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+
+    params = request.json or {}
+    provider = params.get("provider", "deepseek")
+    fmt = params.get("format", "html")
+
+    comic_gen_status[cid] = {"status": "running", "progress": "初始化...", "outputs": [], "started": time.time()}
+    thread = threading.Thread(target=_run_comic_generate, args=(cid, comic.copy(), provider, fmt))
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({"ok": True, "status": "started"})
+
+
+@app.route("/api/comics/<cid>/status", methods=["GET"])
+def api_comic_status(cid):
+    status = comic_gen_status.get(cid, {"status": "idle", "progress": "", "outputs": []})
+    return jsonify(status)
+
+
+@app.route("/api/comics/<cid>/output/<filename>")
+def api_serve_comic_output(cid, filename):
+    out_dir = COMICS_DIR / cid / "output"
+    if not (out_dir / filename).exists():
+        return jsonify({"error": "not found"}), 404
+    return send_from_directory(str(out_dir), filename)
+
+
+@app.route("/api/comics/<cid>/preview", methods=["POST"])
+def api_preview_comic(cid):
+    """Generate a preview HTML from current pages data."""
+    comic = load_comic(cid)
+    if not comic:
+        return jsonify({"error": "not found"}), 404
+
+    pages = comic.get("pages", [])
+    if not pages:
+        return jsonify({"error": "no pages"}), 400
+
+    import tempfile
+    import shutil
+    temp_dir = Path(tempfile.mkdtemp(prefix=f"comic_preview_{cid}_"))
+
+    try:
+        from comic_renderer import ComicRenderer
+        palette = comic.get("plan", {}).get("palette", "warm_pastel")
+        html_file = temp_dir / "preview.html"
+        ComicRenderer().render(pages, palette, comic.get("plan", {}), out=str(html_file))
+        return jsonify({
+            "ok": True,
+            "outputs": [{
+                "type": "html",
+                "name": "preview.html",
+                "url": f"/api/temp/{temp_dir.name}/preview.html"
+            }]
+        })
+    except Exception as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/comic-templates")
+def api_comic_templates():
+    """Return available comic story templates."""
+    from comic_main import TEMPLATES
+    return jsonify(TEMPLATES)
+
+
+@app.route("/api/comic-prompts/default")
+def api_comic_default_prompts():
+    """Return default comic generation prompts."""
+    from comic_main import STORY_PLANNER_SYSTEM, STORY_PLANNER_PROMPT, PAGE_WRITER_SYSTEM, PAGE_WRITER_PROMPT
+    return jsonify({
+        "planner_system": STORY_PLANNER_SYSTEM,
+        "planner_prompt": STORY_PLANNER_PROMPT,
+        "writer_system": PAGE_WRITER_SYSTEM,
+        "writer_prompt": PAGE_WRITER_PROMPT,
+    })
+
+
+# ── Comic Generation Logic ───────────────────────────────
+
+def _run_comic_generate(cid: str, comic: dict, provider: str, fmt: str):
+    """Run comic generation in background thread."""
+    try:
+        from llm import LLMClient
+        from comic_main import story_plan, write_all_pages, TEMPLATES
+        from comic_renderer import ComicRenderer
+
+        s = comic_gen_status[cid]
+
+        # Setup LLM
+        prov = PROVIDERS.get(provider, PROVIDERS["deepseek"])
+        prefix = prov["env_prefix"]
+        api_key = os.getenv(f"{prefix}_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
+        base_url = os.getenv(f"{prefix}_BASE_URL", prov["default_url"])
+        model = os.getenv(f"{prefix}_MODEL", prov["default_model"])
+
+        if not api_key:
+            s["status"] = "error"
+            s["progress"] = f"未配置 {prefix}_API_KEY"
+            return
+
+        llm = LLMClient(provider=prov["sdk"], api_key=api_key, base_url=base_url, model=model)
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        s["progress"] = "Stage 1: 故事规划中..."
+
+        # Stage 1: Story Plan
+        plan_data = loop.run_until_complete(story_plan(llm, comic))
+        palette = plan_data.get("palette", "warm_pastel")
+        n_pages = len(plan_data.get("page_plan", []))
+
+        s["progress"] = f"规划完成({n_pages}页), 生成内容中..."
+
+        # Save plan
+        comic["plan"] = plan_data
+        save_comic(cid, comic)
+
+        # Stage 2: Write Pages
+        s["progress"] = "Stage 2: 内容生成中..."
+        pages = loop.run_until_complete(write_all_pages(llm, plan_data, concurrency=3))
+
+        # Save pages
+        comic["pages"] = pages
+        save_comic(cid, comic)
+
+        s["progress"] = f"内容完成({len(pages)}页), 渲染中..."
+
+        # Stage 3: Render
+        out_dir = COMICS_DIR / cid / "output"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%m%d_%H%M")
+        model_tag = re.sub(r'[/\\.]', '-', model).split('-')[-1][:12]
+        base = str(out_dir / f"comic_{model_tag}_{ts}")
+        outputs = []
+
+        if fmt in ("html", "both"):
+            html_path = f"{base}.html"
+            ComicRenderer().render(pages, palette, plan_data, out=html_path)
+            outputs.append(os.path.basename(html_path))
+
+        if fmt in ("pdf", "both"):
+            pdf_path = f"{base}.pdf"
+            try:
+                from comic_pdf import ComicPDFRenderer
+                ComicPDFRenderer().render(pages, palette, plan_data, out=pdf_path)
+                outputs.append(os.path.basename(pdf_path))
+            except ImportError:
+                pass  # Skip PDF if weasyprint not installed
+
+        elapsed = time.time() - s["started"]
+        cost = llm.get_cost_estimate()
+
+        s["status"] = "done"
+        s["progress"] = f"完成! {len(pages)}页, {elapsed:.1f}s, ${cost:.4f}"
+        s["outputs"] = outputs
+        s["elapsed"] = round(elapsed, 1)
+        s["cost"] = round(cost, 4)
+        s["page_count"] = len(pages)
+        s["tokens"] = {"in": llm.total_input_tokens, "out": llm.total_output_tokens}
+
+    except Exception as e:
+        comic_gen_status[cid]["status"] = "error"
+        comic_gen_status[cid]["progress"] = f"错误: {str(e)[:200]}"
 
 
 # ── Generation Logic ──────────────────────────────────────
