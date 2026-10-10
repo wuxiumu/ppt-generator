@@ -1,3 +1,9 @@
+# PPT 一套生成器（ppt-generator）
+
+> 输入 JSON / 简报 → 输出 **25–30 页**风格统一的 `.pptx` / `.html`。适合培训、咨询、方案汇报的**批量出片**。
+
+**产品页 / 定制：** 微信 **qingbao199101**（备注：PPT生成）｜邮箱 [wuxiumu@163.com](mailto:wuxiumu@163.com)
+
 # PPT Generator — 一套生成器
 
 > 输入一个 JSON，输出一套 25-30 张风格统一、叙事连贯的 .pptx / .html 演示文稿。
@@ -159,3 +165,45 @@ docker run -p 8080:8080 --env-file .env ppt-generator
 ## License
 
 MIT
+
+## SEO / GEO 字段预留
+
+> 做成独立产品页 / 站群页时，模板与配置预留下列字段（先占位，落地页或导出 HTML 时填入）。
+
+| 字段 | 类型 | 用途 |
+|---|---|---|
+| `seo_title` | string | `<title>` / OG title |
+| `seo_description` | string | meta description |
+| `seo_keywords` | string[] | 可选关键词 |
+| `canonical_url` | url | 规范链接 |
+| `og_image` | url | 分享图 |
+| `robots` | string | 如 `index,follow` |
+| `json_ld_type` | string | 如 `SoftwareApplication` / `WebPage` / `FAQPage` |
+| `geo_region` | string | 地域页：省/州代码或名称 |
+| `geo_placename` | string | 城市/地标名（城市站、本地服务页） |
+| `geo_position` | string | 可选 lat,long |
+| `hreflang` | map | 多语言备用，如 `zh-CN` / `en` |
+| `site_name` | string | 品牌名（白标） |
+
+
+## 定制合作
+
+客户品牌模板、行业叙事结构、Web 出片页白标、私有模型接入。加微信备注「PPT生成」。
+
+---
+
+## 联系方式
+
+定制、演示或合作：
+
+- 邮箱：[wuxiumu@163.com](mailto:wuxiumu@163.com)
+- 微信：**qingbao199101**（添加请备注来意）
+
+### 赞助支持
+
+如果内容对你有帮助，欢迎自愿赞助。
+
+| 微信赞赏码 | 支付宝收款码 |
+|---|---|
+| ![微信赞赏码](https://chiguashentan-test.oss-cn-beijing.aliyuncs.com/wxprogram/zan/20261002185236_31_227.png) | ![支付宝收款码](https://chiguashentan-test.oss-cn-beijing.aliyuncs.com/wxprogram/zan/20261002185309_32_227.jpg) |
+
