@@ -36,6 +36,8 @@ COMICS_DIR.mkdir(exist_ok=True)
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "admin888")
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
+_WEAK_ADMIN_PASSWORDS = {"", "admin888", "change-me-before-demo", "changeme"}
+_PLACEHOLDER_MARKERS = ("your-key", "changeme", "replace-me", "sk-xxx")
 TOKEN_EXPIRE = 86400  # 24 hours
 
 # In-memory stores
@@ -123,6 +125,19 @@ PROVIDERS = {
 
 
 # ── Helper Functions ──────────────────────────────────────
+
+def usable_api_key(*candidates: str | None) -> str:
+    """Return the first real API key, ignoring blank and template placeholders."""
+    for raw in candidates:
+        key = (raw or "").strip()
+        if not key:
+            continue
+        lowered = key.lower()
+        if any(marker in lowered for marker in _PLACEHOLDER_MARKERS):
+            continue
+        return key
+    return ""
+
 
 def load_project(pid: str) -> dict | None:
     path = PROJECTS_DIR / pid / "project.json"
@@ -647,7 +662,7 @@ def api_providers():
     result = {}
     for name, cfg in PROVIDERS.items():
         prefix = cfg["env_prefix"]
-        has_key = bool(os.getenv(f"{prefix}_API_KEY") or os.getenv("DEEPSEEK_API_KEY"))
+        has_key = bool(usable_api_key(os.getenv(f"{prefix}_API_KEY"), os.getenv("DEEPSEEK_API_KEY")))
         result[name] = {"model": os.getenv(f"{prefix}_MODEL", cfg["default_model"]), "available": has_key}
     return jsonify(result)
 
@@ -984,13 +999,16 @@ def _run_comic_generate(cid: str, comic: dict, provider: str, fmt: str):
         # Setup LLM
         prov = PROVIDERS.get(provider, PROVIDERS["deepseek"])
         prefix = prov["env_prefix"]
-        api_key = os.getenv(f"{prefix}_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
+        api_key = usable_api_key(os.getenv(f"{prefix}_API_KEY"), os.getenv("DEEPSEEK_API_KEY"))
         base_url = os.getenv(f"{prefix}_BASE_URL", prov["default_url"])
         model = os.getenv(f"{prefix}_MODEL", prov["default_model"])
 
         if not api_key:
             s["status"] = "error"
-            s["progress"] = f"未配置 {prefix}_API_KEY"
+            s["progress"] = (
+                f"还不能生成：请在 .env 中填写 {prefix}_API_KEY。"
+                "可以从 .env.example 复制，占位符不能直接使用。"
+            )
             return
 
         llm = LLMClient(provider=prov["sdk"], api_key=api_key, base_url=base_url, model=model)
@@ -1074,7 +1092,7 @@ def _run_comic_generate(cid: str, comic: dict, provider: str, fmt: str):
 
     except Exception as e:
         comic_gen_status[cid]["status"] = "error"
-        comic_gen_status[cid]["progress"] = f"错误: {str(e)[:200]}"
+        comic_gen_status[cid]["progress"] = f"生成没有完成。请检查 API Key 和网络后重试。详情: {str(e)[:160]}"
 
 
 # ── Generation Logic ──────────────────────────────────────
@@ -1091,13 +1109,16 @@ def _run_generate(pid: str, project: dict, provider: str, fmt: str):
         # Setup LLM
         prov = PROVIDERS.get(provider, PROVIDERS["deepseek"])
         prefix = prov["env_prefix"]
-        api_key = os.getenv(f"{prefix}_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
+        api_key = usable_api_key(os.getenv(f"{prefix}_API_KEY"), os.getenv("DEEPSEEK_API_KEY"))
         base_url = os.getenv(f"{prefix}_BASE_URL", prov["default_url"])
         model = os.getenv(f"{prefix}_MODEL", prov["default_model"])
 
         if not api_key:
             s["status"] = "error"
-            s["progress"] = f"未配置 {prefix}_API_KEY"
+            s["progress"] = (
+                f"还不能生成：请在 .env 中填写 {prefix}_API_KEY。"
+                "可以从 .env.example 复制，占位符不能直接使用。"
+            )
             return
 
         llm = LLMClient(provider=prov["sdk"], api_key=api_key, base_url=base_url, model=model)
@@ -1164,7 +1185,7 @@ def _run_generate(pid: str, project: dict, provider: str, fmt: str):
 
     except Exception as e:
         gen_status[pid]["status"] = "error"
-        gen_status[pid]["progress"] = f"错误: {str(e)[:200]}"
+        gen_status[pid]["progress"] = f"生成没有完成。请检查 API Key 和网络后重试。详情: {str(e)[:160]}"
 
 
 # ── Run ───────────────────────────────────────────────────
@@ -1176,7 +1197,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     port = args.port
 
-    print("\n🖥️  PPT Generator Admin")
-    print(f"📂 项目目录: {PROJECTS_DIR.resolve()}")
-    print(f"🌐 访问: http://localhost:{port}\n")
+    print("\nPPT Generator Admin")
+    print(f"项目目录: {PROJECTS_DIR.resolve()}")
+    print(f"访问: http://localhost:{port}")
+    if ADMIN_PASS in _WEAK_ADMIN_PASSWORDS:
+        print("Web 后台仍在使用模板密码。对外演示前请在 .env 修改 ADMIN_USER 和 ADMIN_PASS。")
+    print()
     app.run(host="0.0.0.0", port=port, debug=False)

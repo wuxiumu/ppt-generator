@@ -61,10 +61,10 @@ class LLMClient:
                 err_str = str(e).lower()
                 if "rate" in err_str or "429" in err_str:
                     wait = (2 ** attempt) * 2
-                    print(f"  ⏳ 限流，等待 {wait}s ...")
+                    print(f"  模型服务繁忙，{wait} 秒后自动重试。")
                     await asyncio.sleep(wait)
                 elif attempt < 2:
-                    print(f"  ⚠️  请求失败({e})，重试 ...")
+                    print(f"  模型请求没有成功（{type(e).__name__}），正在重试。")
                     await asyncio.sleep(1)
                 else:
                     raise
@@ -101,10 +101,10 @@ class LLMClient:
                 err_str = str(e).lower()
                 if "rate" in err_str or "429" in err_str:
                     wait = (2 ** attempt) * 2
-                    print(f"  ⏳ 限流，等待 {wait}s ...")
+                    print(f"  模型服务繁忙，{wait} 秒后自动重试。")
                     await asyncio.sleep(wait)
                 elif attempt < 2:
-                    print(f"  ⚠️  请求失败({e})，重试 ...")
+                    print(f"  模型请求没有成功（{type(e).__name__}），正在重试。")
                     await asyncio.sleep(1)
                 else:
                     raise
