@@ -60,7 +60,7 @@ elif command -v python3 &>/dev/null; then
 fi
 
 if [ -z "$PYTHON" ]; then
-    err "未找到 python3，请先安装 Python 3.9+"
+    err "未找到 python3，请先安装 Python 3.10+"
     exit 1
 fi
 
@@ -104,7 +104,7 @@ if [ ! -f "$SCRIPT_DIR/.env" ]; then
     if [ -f "$SCRIPT_DIR/.env.example" ]; then
         warn ".env 不存在，已从 .env.example 复制模板"
         cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
-        warn "请编辑 .env 填入你的 API Key"
+        warn "请编辑 .env：填入 DEEPSEEK_API_KEY，并修改 ADMIN_PASS。不要提交 .env"
     fi
 fi
 
@@ -202,8 +202,9 @@ if [ "$MODE" = "web" ]; then
     export FLASK_PORT="$PORT"
     "$PYTHON" app.py --port "$PORT" 2>&1 | tee "$LOG_FILE"
 else
-    echo -e "  📝 CLI 模式: main.py test_input.json"
+    echo -e "  输入: samples/client-brief.json"
+    echo -e "  离线检查: python main.py samples/client-brief.json --dry-run"
     echo -e "${CYAN}──────────────────────────────────────${NC}"
     echo ""
-    "$PYTHON" main.py test_input.json 2>&1 | tee "$LOG_FILE"
+    "$PYTHON" main.py samples/client-brief.json 2>&1 | tee "$LOG_FILE"
 fi

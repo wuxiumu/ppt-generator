@@ -20,17 +20,43 @@ uv venv .venv && source .venv/bin/activate
 uv pip install -r requirements.txt
 # 或: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 
-# 3. 配置 API Key
+# 3. 配置 API Key（.env 不会被提交）
 cp .env.example .env
 # 编辑 .env，填入 DeepSeek API Key
+# 复制后的后台密码是 change-me-before-demo，对外演示前请修改
+# 只有不设置 ADMIN_PASS 时才会回退到 admin / admin888
 
-# 4a. CLI 模式 — 一条命令生成
-python main.py inputs/01-python-intro.json
+# 4. 先做离线检查（不需要 API Key，写出 4 张预览）
+python main.py samples/client-brief.json --dry-run
+# 预览文件: output/sample-preview.pptx
 
-# 4b. Web 管理后台 — 可视化编辑 + 生成 + 扫码分享
+# 5a. CLI 正式生成（约 25–30 张，需要上一步填好的 Key）
+python main.py samples/client-brief.json
+# 开发集示例: python main.py inputs/01-python-beginner.json
+
+# 5b. Web 管理后台 — 可视化编辑 + 生成 + 扫码分享
 python app.py
 # 浏览器打开 http://localhost:8080
 ```
+
+## 买家演示
+
+给客户看路径时，用咨询入职培训这套简报，不必先讲开发集：
+
+```bash
+python main.py samples/client-brief.json --dry-run   # 检查输入，写出 4 张预览
+python main.py samples/client-brief.json             # 正式生成 25–30 张
+```
+
+| 步骤 | 路径 |
+|------|------|
+| 输入 | `samples/client-brief.json`（`topic` / `brief` / `audience`） |
+| 离线预览 | `output/sample-preview.pptx`（4 张，不调用模型） |
+| 正式输出 | `output/<主题>_<模型>_<月日_时分>.pptx` 与同名 `.html` |
+
+输入缺字段、文件不是 JSON，或 `.env` 里仍是空的 / 模板占位符时，命令会说明缺什么，并给出下一条可复制的命令。Web 后台在同样情况下会把进度停在「还不能生成」或「生成没有完成」，而不是只丢一段栈信息。
+
+对外打开后台前，把 `.env` 里的 `ADMIN_USER` / `ADMIN_PASS` 改掉。未配置时内置账号是 `admin` / `admin888`。
 
 ## 架构
 
@@ -86,11 +112,12 @@ JSON 输入 (topic + brief + audience)
 ## CLI 用法
 
 ```bash
-python main.py input.json                          # 默认 DeepSeek + PPTX+HTML
-python main.py input.json --provider qwen -f html  # 千问 + 仅HTML
-python main.py input.json --provider openai -f pptx # OpenAI + 仅PPTX
-python main.py input.json -p corporate              # 强制商务蓝调色板
-python main.py input.json -c 10                     # 10并发
+python main.py samples/client-brief.json --dry-run          # 离线检查 + 4 张预览
+python main.py samples/client-brief.json                    # 默认 DeepSeek + PPTX+HTML
+python main.py samples/client-brief.json --provider qwen -f html   # 千问 + 仅 HTML
+python main.py samples/client-brief.json --provider openai -f pptx # OpenAI + 仅 PPTX
+python main.py samples/client-brief.json -p corporate       # 强制商务蓝调色板
+python main.py samples/client-brief.json -c 10              # 10 并发
 ```
 
 ## Web 管理后台
@@ -109,19 +136,22 @@ python app.py  # → http://localhost:8080
 
 ```
 ppt-generator/
-├── main.py              # CLI 入口
+├── main.py              # CLI 入口（含 --dry-run）
 ├── app.py               # Web 管理后台 (Flask API)
-├── admin.html           # 管理面板 (单文件 SPA)
+├── admin-html/          # 管理面板
 ├── llm.py               # LLM 客户端 (OpenAI + Anthropic)
 ├── renderer.py          # PPTX 渲染引擎
 ├── html_renderer.py     # HTML 渲染引擎
 ├── init_demos.py        # 初始化 5 个 demo
-├── requirements.txt
-├── .env.example         # API Key 模板
+├── requirements.txt     # 已钉死的直接依赖
+├── .env.example         # API Key 模板（不含真实密钥）
 ├── DESIGN.md            # 决策日志
+├── samples/             # 买家演示简报
+│   └── client-brief.json
 ├── inputs/              # 5 个开发集 JSON
 ├── doc/                 # 设计文档 + Demo 输出
-└── projects/            # Web 后台数据
+├── output/              # 生成结果（不入库）
+└── projects/            # Web 后台数据（不入库）
 ```
 
 ## 部署
@@ -131,7 +161,8 @@ ppt-generator/
 ```bash
 git clone https://github.com/wuxiumu/ppt-generator.git && cd ppt-generator
 uv venv .venv && source .venv/bin/activate && uv pip install -r requirements.txt
-cp .env.example .env && vim .env  # 填入 API Key
+cp .env.example .env && vim .env  # 填入 API Key，并修改 ADMIN_PASS
+python main.py samples/client-brief.json --dry-run
 python app.py
 ```
 
@@ -154,13 +185,22 @@ docker run -p 8080:8080 --env-file .env ppt-generator
 
 ## 环境变量
 
+复制 `.env.example` 后填写。仓库里只有占位模板，不要提交 `.env`。
+
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `DEEPSEEK_API_KEY` | DeepSeek Key | 必填 |
+| `DEEPSEEK_API_KEY` | DeepSeek Key | 正式生成必填；空值或模板占位符视为未配置 |
 | `DEEPSEEK_BASE_URL` | 端点 | `https://api.deepseek.com` |
-| `QWEN_API_KEY` | 千问 Key | 可选 |
+| `DEEPSEEK_MODEL` | 模型名 | `deepseek-chat` |
+| `QWEN_API_KEY` | 千问 Key | 可选，`--provider qwen` |
 | `QWEN_BASE_URL` | 千问端点 | DashScope Anthropic 兼容 |
-| `OPENAI_API_KEY` | OpenAI Key | 可选 |
+| `QWEN_MODEL` | 千问模型 | `qwen3.7-plus` |
+| `OPENAI_API_KEY` | OpenAI Key | 可选，`--provider openai` |
+| `OPENAI_BASE_URL` | OpenAI 端点 | `https://api.openai.com/v1` |
+| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` |
+| `ADMIN_USER` | Web 后台账号 | `admin` |
+| `ADMIN_PASS` | Web 后台密码 | `admin888`（对外演示前请修改） |
+| `SECRET_KEY` | 会话签名 | 未设置时每次启动随机生成 |
 
 ## License
 

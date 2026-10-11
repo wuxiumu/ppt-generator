@@ -12,11 +12,25 @@ import re
 import sys
 import time
 from datetime import datetime
-from dotenv import load_dotenv
 
-from llm import LLMClient
-from renderer import Renderer
-from html_renderer import HTMLRenderer
+try:
+    from dotenv import load_dotenv
+    from llm import LLMClient
+    from renderer import PALETTES, Renderer
+    from html_renderer import HTMLRenderer
+except ImportError as exc:
+    missing = getattr(exc, "name", None) or exc
+    print("依赖还没装好，生成器无法启动。")
+    print("  请在项目目录执行：")
+    print("    python3 -m venv .venv && source .venv/bin/activate")
+    print("    pip install -r requirements.txt")
+    print(f"  缺少模块: {missing}")
+    sys.exit(1)
+
+SAMPLE_INPUT = "samples/client-brief.json"
+SAMPLE_PREVIEW = "output/sample-preview.pptx"
+REQUIRED_FIELDS = ("topic", "brief", "audience")
+_PLACEHOLDER_MARKERS = ("your-key", "changeme", "replace-me", "sk-xxx")
 
 # ── Provider configurations ───────────────────────────────
 
@@ -248,7 +262,7 @@ async def write_slide(llm: LLMClient, spec: dict, ctx: dict, sem) -> dict:
         try:
             content = parse_json(raw)
         except json.JSONDecodeError:
-            print(f"  ⚠️  S{spec['n']} JSON解析失败，使用备选内容")
+            print(f"  第 {spec['n']} 页返回的内容无法解析，已用简短占位继续。正式演示前建议重跑。")
             content = {
                 "title": spec.get("brief", "")[:15],
                 "bullets": ["内容生成中..."],
@@ -304,11 +318,191 @@ def validate(slides: list[dict]) -> list[str]:
     return issues
 
 
+# ── Buyer-demo helpers ────────────────────────────────────
+
+def fail(message: str, code: int = 1) -> None:
+    """Print a short, actionable error and stop."""
+    print(message)
+    sys.exit(code)
+
+
+def usable_api_key(*candidates: str | None) -> str:
+    """Return the first real API key, ignoring blank and template placeholders."""
+    for raw in candidates:
+        key = (raw or "").strip()
+        if not key:
+            continue
+        lowered = key.lower()
+        if any(marker in lowered for marker in _PLACEHOLDER_MARKERS):
+            continue
+        return key
+    return ""
+
+
+def _short(text: str, limit: int) -> str:
+    text = " ".join(str(text).split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
+
+
+def load_brief(path: str) -> dict:
+    """Load a buyer brief. Failures name the file and the next command to run."""
+    if not os.path.isfile(path):
+        fail(
+            "找不到输入文件，这一轮还不能生成。\n"
+            f"  路径: {path}\n"
+            "  买家演示请用: python main.py samples/client-brief.json --dry-run\n"
+            "  开发集示例: python main.py inputs/01-python-beginner.json"
+        )
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        fail(
+            "输入文件不是合法 JSON，这一轮还不能生成。\n"
+            f"  文件: {path}\n"
+            f"  位置: 第 {exc.lineno} 行，第 {exc.colno} 列\n"
+            "  请对照 samples/client-brief.json，确认是一个包含 topic、brief、audience 的对象。"
+        )
+    except UnicodeDecodeError:
+        fail(
+            "输入文件编码无法读取。请保存为 UTF-8 JSON。\n"
+            f"  文件: {path}\n"
+            "  可参考: samples/client-brief.json"
+        )
+    if not isinstance(data, dict):
+        fail(
+            "输入 JSON 需要是对象，而不是数组或其他类型。\n"
+            "  必填字段: topic、brief、audience\n"
+            "  可参考: samples/client-brief.json"
+        )
+    missing = [key for key in REQUIRED_FIELDS if not str(data.get(key, "")).strip()]
+    if missing:
+        fail(
+            "输入还不能用于生成，缺少必填字段: " + "、".join(missing) + "。\n"
+            "  三个字段都需要非空文字。示例见 samples/client-brief.json"
+        )
+    return data
+
+
+def preview_slides(data: dict) -> list[dict]:
+    """Four local slides so a buyer can open a deck without an API key."""
+    return [
+        {
+            "layout": "title",
+            "title": _short(data["topic"], 18),
+            "subtitle": "离线预览 · 正式生成会展开为 25–30 张",
+        },
+        {
+            "layout": "bullets",
+            "title": "这场培训要讲清什么",
+            "bullets": [
+                f"受众：{_short(data['audience'], 22)}",
+                _short(data["brief"], 24),
+                "正式生成会按三幕结构展开",
+            ],
+        },
+        {
+            "layout": "statement",
+            "title": "这一页只证明版式可用",
+            "subtitle": "不调用模型，也不消耗额度",
+        },
+        {
+            "layout": "end",
+            "title": "可以开始正式生成",
+            "subtitle": "配置 API Key 后去掉 --dry-run",
+        },
+    ]
+
+
+def render_preview(data: dict, palette: str, out: str) -> str:
+    try:
+        os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+        Renderer().render(preview_slides(data), palette, topic=data["topic"], out=out)
+    except Exception as exc:
+        fail(
+            "离线预览没有写出来。请确认已执行 pip install -r requirements.txt。\n"
+            f"  目标: {out}\n"
+            f"  原因: {type(exc).__name__}: {exc}"
+        )
+    return out
+
+
+async def _generate(llm, data, args, base_name, topic, model, t0):
+    """Run plan, write, and render. Caller turns failures into a short message."""
+    print(f"\n{'─' * 50}")
+    print(f"主题: {topic}")
+    print(f"受众: {data.get('audience', '通用')}")
+    print(f"模型: {args.provider} / {model}")
+    print(f"输入将生成约 25–30 张，输出目录: {os.path.dirname(base_name) or '.'}")
+    print(f"{'─' * 50}")
+
+    print("\n正在规划叙事结构...")
+    plan_data = await plan(llm, data)
+    palette = args.palette or plan_data.get("palette", "tech")
+    if palette not in PALETTES:
+        source = "指定的" if args.palette else "模型返回的"
+        print(f"{source}调色板「{palette}」无法识别，已改用 tech。")
+        palette = "tech"
+    n_slides = len(plan_data.get("slide_plan", []))
+    rhythm_fixes = fix_layout_rhythm(plan_data["slide_plan"])
+    if rhythm_fixes:
+        print(f"  已调整 {rhythm_fixes} 处连续相同的版式，避免看起来重复。")
+    print(f"  规划完成: {n_slides} 张，调色板 {palette}，语气 {plan_data.get('tone', '')}")
+
+    os.makedirs("debug", exist_ok=True)
+    with open("debug/plan.json", "w", encoding="utf-8") as f:
+        json.dump(plan_data, f, ensure_ascii=False, indent=2)
+
+    print(f"\n正在撰写幻灯片内容（并发 {args.concurrency}）...")
+    t1 = time.time()
+    contents = await write_all(llm, plan_data, args.concurrency)
+    t_write = time.time() - t1
+    print(f"  内容完成: {len(contents)} 张（{t_write:.1f} 秒）")
+
+    with open("debug/contents.json", "w", encoding="utf-8") as f:
+        json.dump(contents, f, ensure_ascii=False, indent=2)
+
+    issues = validate(contents)
+    if issues:
+        print(f"  有 {len(issues)} 处版式或标题需要留意，文件仍会写出：")
+        for iss in issues[:5]:
+            print(f"     - {iss}")
+
+    fmt = args.format
+    output_files = []
+
+    if fmt in ("pptx", "both"):
+        pptx_out = f"{base_name}.pptx"
+        print("\n正在写出 PowerPoint...")
+        Renderer().render(contents, palette, topic=topic, out=pptx_out)
+        output_files.append(pptx_out)
+
+    if fmt in ("html", "both"):
+        html_out = f"{base_name}.html"
+        print("\n正在写出 HTML...")
+        HTMLRenderer().render(contents, palette, topic=topic, out=html_out)
+        output_files.append(html_out)
+
+    total_time = time.time() - t0
+    cost = llm.get_cost_estimate()
+
+    print(f"\n{'═' * 50}")
+    for path in output_files:
+        print(f"已写出: {path}")
+    print(f"  幻灯片: {len(contents)} 张")
+    print(f"  耗时: {total_time:.1f} 秒")
+    print(f"  预估成本: ${cost:.4f}")
+    print(f"  Tokens: {llm.total_input_tokens:,} in + {llm.total_output_tokens:,} out")
+    print(f"{'═' * 50}")
+
+
 # ── Main ──────────────────────────────────────────────────
 
 async def main():
     parser = argparse.ArgumentParser(description="PPT Generator")
-    parser.add_argument("input", help="Input JSON file")
+    parser.add_argument("input", nargs="?", help="输入 JSON，需包含 topic、brief、audience")
     parser.add_argument("-o", "--output", help="Output .pptx path (overrides auto-naming)")
     parser.add_argument("-p", "--palette", help="Force palette name")
     parser.add_argument("--provider", default="deepseek",
@@ -318,20 +512,62 @@ async def main():
     parser.add_argument("-f", "--format", default="both",
                         choices=["pptx", "html", "both"],
                         help="Output format: pptx / html / both")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="检查输入并写出 4 张离线预览，不调用模型")
     args = parser.parse_args()
 
     load_dotenv()
 
+    input_path = args.input or (SAMPLE_INPUT if args.dry_run else "")
+    if not input_path:
+        fail(
+            "还没有指定输入文件。\n"
+            "  离线检查: python main.py samples/client-brief.json --dry-run\n"
+            "  正式生成: python main.py samples/client-brief.json"
+        )
+
+    data = load_brief(input_path)
+
     # Resolve provider config from env vars
     prov = PROVIDERS[args.provider]
     prefix = prov["env_prefix"]
-    api_key = os.getenv(f"{prefix}_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
+    api_key = usable_api_key(
+        os.getenv(f"{prefix}_API_KEY"),
+        os.getenv("DEEPSEEK_API_KEY"),
+    )
     base_url = os.getenv(f"{prefix}_BASE_URL", prov["default_url"])
     model = os.getenv(f"{prefix}_MODEL", prov["default_model"])
 
+    if args.dry_run:
+        palette = args.palette or "corporate"
+        if palette not in PALETTES:
+            print(f"调色板「{palette}」不在可选范围，预览改用 corporate。")
+            print("  可选: " + "、".join(PALETTES))
+            palette = "corporate"
+        preview_out = args.output or SAMPLE_PREVIEW
+        if preview_out.endswith(".html"):
+            preview_out = preview_out[:-5] + ".pptx"
+        elif not preview_out.endswith(".pptx"):
+            preview_out = preview_out + ".pptx"
+        render_preview(data, palette, preview_out)
+        key_state = "已配置，可以正式生成" if api_key else "尚未配置，正式生成前需要填写"
+        print("离线检查通过。这一步没有调用模型。")
+        print(f"  输入: {input_path}")
+        print(f"  主题: {data['topic']}")
+        print(f"  受众: {data['audience']}")
+        print(f"  模型: {args.provider} / {model}（{key_state}）")
+        print(f"  预览: {preview_out}（4 张）")
+        print("下一步，生成完整的 25–30 张：")
+        print(f"  python main.py {input_path}")
+        return
+
     if not api_key:
-        print(f"❌ 请设置 {prefix}_API_KEY（在 .env 文件或环境变量中）")
-        sys.exit(1)
+        fail(
+            f"还不能调用模型：没有可用的 {prefix}_API_KEY。\n"
+            "  1. 复制模板: cp .env.example .env\n"
+            "  2. 在 .env 里填入服务商发放的密钥，不要提交这个文件\n"
+            "  3. 想先看版式: python main.py samples/client-brief.json --dry-run"
+        )
 
     # Sanitize model name for filename (remove slashes, dots)
     model_tag = re.sub(r'[/\\.]', '-', model).split('-')[-1]  # e.g. "chat" from "deepseek-chat"
@@ -342,83 +578,23 @@ async def main():
     llm = LLMClient(provider=prov["sdk"], api_key=api_key, base_url=base_url, model=model)
     t0 = time.time()
 
-    # Load input
-    with open(args.input, encoding="utf-8") as f:
-        data = json.load(f)
-
     topic = data["topic"]
     topic_tag = topic.replace(" ", "_").replace("/", "-")[:20]
     base_name = args.output or f"output/{topic_tag}_{model_tag}_{ts}"
     os.makedirs(os.path.dirname(base_name) or "output", exist_ok=True)
 
-    # ── Stage 1: Plan ──
-    print(f"\n{'─' * 50}")
-    print(f"📋 主题: {topic}")
-    print(f"👥 受众: {data.get('audience', '通用')}")
-    print(f"🤖 模型: {args.provider} / {model}")
-    print(f"{'─' * 50}")
-
-    print("\n🎬 Stage 1: 叙事规划 ...")
-    plan_data = await plan(llm, data)
-    palette = args.palette or plan_data.get("palette", "tech")
-    n_slides = len(plan_data.get("slide_plan", []))
-    rhythm_fixes = fix_layout_rhythm(plan_data["slide_plan"])
-    if rhythm_fixes:
-        print(f"  🔧 自动修复了 {rhythm_fixes} 处连续相同布局")
-    print(f"  ✅ 规划完成: {n_slides} 张, 调色板={palette}, 语气={plan_data.get('tone', '')}")
-
-    # Save plan for debugging
-    os.makedirs("debug", exist_ok=True)
-    with open("debug/plan.json", "w", encoding="utf-8") as f:
-        json.dump(plan_data, f, ensure_ascii=False, indent=2)
-
-    # ── Stage 2: Write ──
-    print(f"\n✍️  Stage 2: 内容生成 (并发={args.concurrency}) ...")
-    t1 = time.time()
-    contents = await write_all(llm, plan_data, args.concurrency)
-    t_write = time.time() - t1
-    print(f"  ✅ {len(contents)} 张内容生成完成 ({t_write:.1f}s)")
-
-    # Save contents for debugging
-    with open("debug/contents.json", "w", encoding="utf-8") as f:
-        json.dump(contents, f, ensure_ascii=False, indent=2)
-
-    # Validate
-    issues = validate(contents)
-    if issues:
-        print(f"  ⚠️  发现 {len(issues)} 个问题:")
-        for iss in issues[:5]:
-            print(f"     - {iss}")
-
-    # ── Stage 3: Render ──
-    fmt = args.format
-    output_files = []
-
-    if fmt in ("pptx", "both"):
-        pptx_out = f"{base_name}.pptx"
-        print("\n🎨 Stage 3: PPTX渲染 ...")
-        renderer = Renderer()
-        renderer.render(contents, palette, topic=topic, out=pptx_out)
-        output_files.append(pptx_out)
-
-    if fmt in ("html", "both"):
-        html_out = f"{base_name}.html"
-        print("\n🌐 Stage 3: HTML渲染 ...")
-        html_renderer = HTMLRenderer()
-        html_renderer.render(contents, palette, topic=topic, out=html_out)
-        output_files.append(html_out)
-
-    total_time = time.time() - t0
-    cost = llm.get_cost_estimate()
-
-    print(f"\n{'═' * 50}")
-    for f in output_files:
-        print(f"✅ {f}")
-    print(f"   📊 {len(contents)} 张幻灯片")
-    print(f"   ⏱  总耗时: {total_time:.1f}s")
-    print(f"   💰 预估成本: ${cost:.4f}")
-    print(f"   📝 Tokens: {llm.total_input_tokens:,} in + {llm.total_output_tokens:,} out")
-    print(f"{'═' * 50}")
+    try:
+        await _generate(llm, data, args, base_name, topic, model, t0)
+    except Exception as exc:
+        reason = " ".join(str(exc).split())
+        if len(reason) > 240:
+            reason = reason[:240] + "…"
+        fail(
+            "生成中断，这一轮没有写出完整幻灯片。\n"
+            f"  原因: {type(exc).__name__}: {reason}\n"
+            "  请检查 API Key、网络和服务商额度。可以先跑通离线预览:\n"
+            "  python main.py samples/client-brief.json --dry-run"
+        )
 
 
 if __name__ == "__main__":
